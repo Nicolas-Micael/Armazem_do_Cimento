@@ -1,0 +1,19 @@
+{
+  // Configuração do compilador TypeScript do backend.
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "nodenext",            // módulos ES modernos do Node (import/export)
+    "moduleResolution": "nodenext",
+    "rootDir": "src",
+    "outDir": "dist",                // onde o JavaScript compilado é gerado
+    "strict": true,                  // checagens rigorosas: pegam erros cedo
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "sourceMap": true,
+    "types": ["node"]
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
+}

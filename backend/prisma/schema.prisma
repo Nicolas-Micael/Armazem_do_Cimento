@@ -1,0 +1,42 @@
+// =============================================================
+// Schema do banco de dados — Armazém do Cimento
+// -------------------------------------------------------------
+// Cada "model" vira uma tabela no PostgreSQL. Cada mudança neste
+// arquivo deve gerar uma migration (npm run db:migrate), que é o
+// histórico versionado das alterações do banco.
+//
+// Etapa 1: apenas a tabela de usuários. As demais tabelas
+// (clientes, produtos, pedidos, pagamentos...) entram nas etapas
+// seguintes, conforme docs/planejamento-arquitetura.md, seção 5.
+// =============================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Os dois únicos perfis do sistema (decisão de 25/11/2026).
+enum Role {
+  ADMIN
+  FINANCEIRO
+}
+
+/// Usuário que acessa o sistema.
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  /// Hash da senha (nunca a senha em texto puro).
+  passwordHash String   @map("password_hash")
+  role         Role
+  /// Usuários são desativados, não apagados, para preservar o histórico.
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("users")
+}

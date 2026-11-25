@@ -1,0 +1,20 @@
+# PostgreSQL para DESENVOLVIMENTO local (não é usado em produção).
+# Subir:   docker compose up -d
+# Parar:   docker compose down        (os dados continuam no volume)
+services:
+  postgres:
+    image: postgres:16
+    container_name: armazem-postgres
+    environment:
+      POSTGRES_USER: armazem
+      POSTGRES_PASSWORD: armazem_dev   # senha só de desenvolvimento local
+      POSTGRES_DB: armazem_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - armazem-pgdata:/var/lib/postgresql/data
+      # Cria também o banco de testes (armazem_test) na primeira execução.
+      - ./backend/prisma/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+
+volumes:
+  armazem-pgdata:
