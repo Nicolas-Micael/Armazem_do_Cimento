@@ -1,4 +1,5 @@
 import { apiRequest, jsonBody } from "./client";
+import type { PaymentMethod } from "./payments";
 import type { Page } from "./types";
 
 export type OrderStatus = "PENDING" | "CONFIRMED" | "PICKING" | "OUT_FOR_DELIVERY" | "COMPLETED" | "CANCELLED";
@@ -104,8 +105,12 @@ export interface OrderPreview {
 
 export type OrderSortField = "number" | "createdAt" | "customer" | "total" | "status";
 
+/** Item da lista: a saída + recebido e saldo (balance é null em Pendente e Cancelada). */
+export type OrderListItem = Order & { received: string; balance: string | null };
+
 export interface OrderListParams {
   search?: string;
+  paymentMethod?: PaymentMethod | "all";
   status?: OrderStatus | "all";
   from?: string;
   to?: string;
@@ -142,7 +147,7 @@ export function listOrders(params: OrderListParams) {
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== "" && value !== "all") query.set(key, String(value));
   }
-  return apiRequest<Page & { orders: Order[]; totals: OrderListTotals }>(`/orders?${query.toString()}`);
+  return apiRequest<Page & { orders: OrderListItem[]; totals: OrderListTotals }>(`/orders?${query.toString()}`);
 }
 
 export function getOrderHistory(id: string) {

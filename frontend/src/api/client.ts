@@ -58,6 +58,6 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
 }
 
 /** Atalho para enviar um objeto como JSON. */
-export function jsonBody(method: "POST" | "PATCH", data: unknown): RequestInit {
+export function jsonBody(method: "POST" | "PATCH" | "PUT", data: unknown): RequestInit {
   return { method, body: JSON.stringify(data) };
 }

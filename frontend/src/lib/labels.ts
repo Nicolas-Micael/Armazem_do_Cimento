@@ -1,5 +1,6 @@
 // Textos em português para os códigos que vêm da API.
 import type { DeliveryMode, OperationType, OrderStatus, PaymentTerm } from "../api/orders";
+import type { PaymentMethod, PaymentStatus } from "../api/payments";
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   PENDING: "Pendente",
@@ -25,4 +26,21 @@ export const DELIVERY_MODE_LABELS: Record<DeliveryMode, string> = {
 
 export const OPERATION_TYPE_LABELS: Record<OperationType, string> = {
   SALE: "Venda",
+};
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  CASH: "Dinheiro",
+  PIX: "Pix",
+  CHECK: "Cheque",
+  DEPOSIT: "Depósito bancário",
+  DEBIT_CARD: "Cartão de débito",
+  CREDIT_CARD: "Cartão de crédito",
+  TRANSFER: "Transferência bancária",
+};
+
+export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  PENDING: "Pendente",
+  TO_CLEAR: "A compensar",
+  CONFIRMED: "Confirmado",
+  REVERSED: "Estornado",
 };

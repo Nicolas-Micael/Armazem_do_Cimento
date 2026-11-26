@@ -3,8 +3,8 @@
 // REGRAS (decisão do Nicolas, 26/11/2026):
 // - Só contam saídas EFETIVADAS: Confirmado, Em separação, Saiu para entrega e Concluído.
 // - Pendente (rascunho) e Cancelado ficam de fora de todos os indicadores.
-// - Nada é estimado: o painel não mostra "valor recebido" nem "saldo a receber",
-//   porque ainda não existem pagamentos registrados (etapa D).
+// - Nada é estimado. Os indicadores financeiros (recebido, a receber, em atraso) vêm dos
+//   pagamentos gravados e ficam em dashboard.financial.ts, com as definições.
 //
 // ❓ P-DASH-1: o período usa a data de registro do pedido (created_at). Quando existir
 //    uma "data da saída" própria, troque a coluna em um só lugar (DATE_COLUMN).
@@ -12,6 +12,7 @@
 import { Prisma } from "../../generated/prisma/client.js";
 import { prisma } from "../../lib/prisma.js";
 import { Decimal, moneyToString } from "../../lib/money.js";
+import { getFinancialIndicators } from "./dashboard.financial.js";
 import { BUSINESS_TIME_ZONE, addDays, defaultPeriod, listDays, previousPeriod, validatePeriod, type Period } from "./dashboard.period.js";
 
 /** Situações que contam como saída efetivada. */
@@ -86,7 +87,7 @@ export async function getDashboard(query: DashboardQuery) {
   // "Dia" no horário de Brasília, como texto AAAA-MM-DD.
   const dayExpr = Prisma.sql`(${DATE_COLUMN} AT TIME ZONE ${TZ})::date::text`;
 
-  const [ordersByDay, bagsByDay, byProduct, customerOrders, customerBags, recent, pending] = await Promise.all([
+  const [ordersByDay, bagsByDay, byProduct, customerOrders, customerBags, recent, pending, financial] = await Promise.all([
     prisma.$queryRaw<{ day: string; orders_count: number; revenue: string }[]>`
       SELECT ${dayExpr} AS day, COUNT(*)::int AS orders_count, SUM(o.total)::text AS revenue
       FROM orders o WHERE ${where} GROUP BY 1`,
@@ -110,6 +111,7 @@ export async function getDashboard(query: DashboardQuery) {
       FROM orders o WHERE ${where} ORDER BY o.created_at DESC, o.number DESC LIMIT 8`,
     // Pendentes não entram nos indicadores; aparecem à parte, só como aviso de trabalho em aberto.
     prisma.order.aggregate({ where: { status: "PENDING" }, _count: true, _sum: { total: true } }),
+    getFinancialIndicators(period),
   ]);
 
   // Junta pedidos e sacos por dia e preenche os dias sem venda com zero.
@@ -163,6 +165,7 @@ export async function getDashboard(query: DashboardQuery) {
       bagsSold: row.bags,
       total: moneyToString(new Decimal(row.total)),
     })),
+    financial,
     pendingOrders: {
       ordersCount: pending._count,
       total: moneyToString(new Decimal(pending._sum.total ?? 0)),

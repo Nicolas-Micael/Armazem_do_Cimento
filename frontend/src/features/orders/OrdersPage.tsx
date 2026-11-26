@@ -7,19 +7,20 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import { listCustomers } from "../../api/customers";
 import {
   listOrders,
-  type Order,
+  type OrderListItem,
   type OrderListParams,
   type OrderListTotals,
   type OrderSortField,
   type OrderStatus,
   type PaymentTerm,
 } from "../../api/orders";
+import type { PaymentMethod } from "../../api/payments";
 import { listProducts } from "../../api/products";
 import type { Customer, Page, Product } from "../../api/types";
 import { FormErrors } from "../../components/FormErrors";
 import { Pagination } from "../../components/Pagination";
 import { formatDateTime, formatInteger, formatMoney } from "../../lib/format";
-import { ORDER_STATUS_LABELS, PAYMENT_TERM_LABELS } from "../../lib/labels";
+import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS, PAYMENT_TERM_LABELS } from "../../lib/labels";
 import { StatusBadge } from "./StatusBadge";
 
 interface Filters {
@@ -29,19 +30,20 @@ interface Filters {
   customerId: string;
   productId: string;
   paymentTerm: PaymentTerm | "all";
+  paymentMethod: PaymentMethod | "all";
   status: OrderStatus | "all";
 }
 
-const NO_FILTERS: Filters = { search: "", from: "", to: "", customerId: "", productId: "", paymentTerm: "all", status: "all" };
+const NO_FILTERS: Filters = { search: "", from: "", to: "", customerId: "", productId: "", paymentTerm: "all", paymentMethod: "all", status: "all" };
 
 /** Produtos da saída para a coluna "Produtos": o primeiro nome, ou "N produtos". */
-function productsSummary(order: Order): string {
+function productsSummary(order: OrderListItem): string {
   const names = [...new Set(order.items.map((item) => item.productName))];
   return names.length === 1 ? (names[0] ?? "") : `${names.length} produtos`;
 }
 
 /** Valor unitário: o preço único, ou "vários" quando há produtos/preços diferentes. */
-function unitPriceSummary(order: Order): string {
+function unitPriceSummary(order: OrderListItem): string {
   const prices = new Set(order.items.map((item) => item.unitPrice));
   const [only] = [...prices];
   return prices.size === 1 && only ? formatMoney(only) : "vários";
@@ -57,7 +59,7 @@ export function OrdersPage() {
   const [sortBy, setSortBy] = useState<OrderSortField>("number");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
-  const [data, setData] = useState<(Page & { orders: Order[]; totals: OrderListTotals }) | null>(null);
+  const [data, setData] = useState<(Page & { orders: OrderListItem[]; totals: OrderListTotals }) | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -207,6 +209,17 @@ export function OrdersPage() {
             </select>
           </label>
           <label>
+            Forma de pagamento
+            <select value={filters.paymentMethod} onChange={(e) => change({ paymentMethod: e.target.value as PaymentMethod | "all" })}>
+              <option value="all">Todas</option>
+              {(Object.keys(PAYMENT_METHOD_LABELS) as PaymentMethod[]).map((value) => (
+                <option key={value} value={value}>
+                  {PAYMENT_METHOD_LABELS[value]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
             Situação
             <select value={filters.status} onChange={(e) => change({ status: e.target.value as OrderStatus | "all" })}>
               <option value="all">Todas</option>
@@ -273,6 +286,7 @@ export function OrdersPage() {
                   <th className="numeric">Valor unitário</th>
                   {sortHeader("total", "Valor total", true)}
                   <th>Pagamento</th>
+                  <th className="numeric">Saldo a receber</th>
                   {sortHeader("status", "Situação")}
                   <th>Ações</th>
                 </tr>
@@ -290,6 +304,7 @@ export function OrdersPage() {
                     <td className="numeric">{unitPriceSummary(order)}</td>
                     <td className="numeric">{formatMoney(order.total)}</td>
                     <td>{PAYMENT_TERM_LABELS[order.paymentTerm]}</td>
+                    <td className="numeric">{order.balance === null ? "—" : formatMoney(order.balance)}</td>
                     <td>
                       <StatusBadge status={order.status} />
                     </td>

@@ -59,3 +59,16 @@ Não existe rota para apagar pagamento. Todas as rotas exigem login e perfil ADM
 ## Testes do D1
 
 Cobrem elegibilidade, situação inicial por meio, regras de conta, limite (inclusive o exemplo de R$ 2.000), estorno e cheque devolvido, permissões (401 sem login), histórico e auditoria, vencimentos e atraso, filtro da lista, CHECKs do banco e concorrência (2 e 6 registros simultâneos; 2 confirmações e 2 estornos simultâneos). Sem o bloqueio da saída, o teste de 6 registros simultâneos falha.
+
+## D2 — Telas e painel
+
+- **Detalhe da saída:** seção "Pagamentos" (a partir de Confirmado): resumo (total, recebido, a compensar, pendentes, saldo a receber, disponível), vencimentos com pago/em aberto/atraso, lançamentos com histórico, registrar pagamento, confirmar recebimento, compensar cheque (escolhendo a conta) e estornar (motivo obrigatório). A tela só mostra e chama a API; o backend confere tudo.
+- **Lista de saídas:** filtro "Forma de pagamento" e coluna "Saldo a receber" (— em Pendente e Cancelada).
+- **Painel:** bloco "Financeiro" (recebido no período, a receber hoje, em atraso, a compensar, pendentes de conferência) e recebido por forma de pagamento e por conta. Sem dados fictícios: tudo vem dos pagamentos gravados.
+
+### Definições dos indicadores (leituras provisórias)
+
+- **P-DASH-3 — Recebido no período:** pagamentos **Confirmados** cuja confirmação (dia de Brasília) cai no período, não importa a data da venda. Cheque conta na data da compensação. Pendente, A compensar e Estornado nunca entram.
+- **P-DASH-4 — A receber:** posição de **hoje**, sem filtro de período: total das saídas confirmadas em diante − pagamentos Confirmados delas.
+- **Por conta:** usa a conta atual do pagamento (cheque compensado no Bradesco aparece no Bradesco).
+- **Em atraso:** vencimento anterior a hoje com valor em aberto, depois de abatidos os Confirmados (mais antigos primeiro).
