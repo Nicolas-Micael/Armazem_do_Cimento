@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { parseQuery } from "../../middlewares/validate.js";
 import * as ordersService from "./orders.service.js";
 import { orderListQuerySchema } from "./orders.schemas.js";
+import { getOrderHistory } from "./orders.history.js";
 
 export async function list(req: Request, res: Response) {
   res.json(await ordersService.listOrders(parseQuery(orderListQuerySchema, req.query)));
@@ -28,4 +29,8 @@ export async function update(req: Request<{ id: string }>, res: Response) {
 export async function confirm(req: Request<{ id: string }>, res: Response) {
   const order = await ordersService.confirmOrder(req.auth!.user.id, req.params.id, req.body);
   res.json({ order });
+}
+
+export async function history(req: Request<{ id: string }>, res: Response) {
+  res.json(await getOrderHistory(req.params.id));
 }

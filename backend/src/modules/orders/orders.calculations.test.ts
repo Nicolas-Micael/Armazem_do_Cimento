@@ -92,3 +92,110 @@ describe("calculateOrderTotals", () => {
     expect(result.total).toBe("0.00");
   });
 });
+
+describe("desconto por item + desconto geral", () => {
+  const full = (input: CalculationInput) => {
+    const r = calculateOrderTotals(input);
+    return {
+      gross: r.lineGrossTotals.map((v) => v.toFixed(2)),
+      itemDiscounts: r.lineDiscounts.map((v) => v.toFixed(2)),
+      net: r.lineTotals.map((v) => v.toFixed(2)),
+      grossSubtotal: r.grossSubtotal.toFixed(2),
+      itemDiscountsTotal: r.itemDiscountsTotal.toFixed(2),
+      subtotal: r.subtotal.toFixed(2),
+      generalDiscount: r.discountAmount.toFixed(2),
+      totalDiscounts: r.totalDiscounts.toFixed(2),
+      total: r.total.toFixed(2),
+    };
+  };
+
+  it("desconto fixo no item reduz só aquele item", () => {
+    expect(
+      full({
+        items: [
+          { quantity: 10, unitPrice: d("38.90"), discount: { type: "FIXED", value: d("19.00") } },
+          { quantity: 5, unitPrice: d("45.15") },
+        ],
+        freightAmount: d("0"),
+        discount: null,
+      }),
+    ).toMatchObject({ gross: ["389.00", "225.75"], itemDiscounts: ["19.00", "0.00"], net: ["370.00", "225.75"], subtotal: "595.75", total: "595.75" });
+  });
+
+  it("desconto percentual no item incide sobre o bruto do item", () => {
+    const r = full({
+      items: [{ quantity: 3, unitPrice: d("38.90"), discount: { type: "PERCENTAGE", value: d("10") } }],
+      freightAmount: d("0"),
+      discount: null,
+    });
+    // 116,70 × 10% = 11,67
+    expect(r).toMatchObject({ gross: ["116.70"], itemDiscounts: ["11.67"], net: ["105.03"], total: "105.03" });
+  });
+
+  it("desconto geral percentual incide sobre os produtos JÁ com os descontos dos itens (sem duplicidade)", () => {
+    const r = full({
+      items: [{ quantity: 10, unitPrice: d("40.00"), discount: { type: "FIXED", value: d("100.00") } }], // bruto 400, líquido 300
+      freightAmount: d("50.00"),
+      discount: { type: "PERCENTAGE", value: d("10") }, // 10% de 300 = 30 (e não 10% de 400)
+    });
+    expect(r).toMatchObject({
+      grossSubtotal: "400.00", itemDiscountsTotal: "100.00", subtotal: "300.00",
+      generalDiscount: "30.00", totalDiscounts: "130.00", total: "320.00", // 300 + 50 − 30
+    });
+  });
+
+  it("os dois descontos somam em 'descontos totais' e o total fecha: bruto − descontos + frete", () => {
+    const r = calculateOrderTotals({
+      items: [
+        { quantity: 7, unitPrice: d("38.90"), discount: { type: "PERCENTAGE", value: d("2.5") } },
+        { quantity: 3, unitPrice: d("45.15"), discount: { type: "FIXED", value: d("1.05") } },
+        { quantity: 1, unitPrice: d("10.00") },
+      ],
+      freightAmount: d("33.33"),
+      discount: { type: "FIXED", value: d("12.34") },
+    });
+    expect(r.grossSubtotal.plus(r.freightAmount).minus(r.totalDiscounts).toFixed(2)).toBe(r.total.toFixed(2));
+  });
+
+  it("desconto do item não pode passar do valor do item", () => {
+    expect(() =>
+      calculateOrderTotals({
+        items: [{ quantity: 1, unitPrice: d("10.00"), discount: { type: "FIXED", value: d("10.01") } }],
+        freightAmount: d("0"),
+        discount: null,
+      }),
+    ).toThrow(/maior que o valor do item/);
+    expect(() =>
+      calculateOrderTotals({
+        items: [{ quantity: 1, unitPrice: d("10.00"), discount: { type: "PERCENTAGE", value: d("100.01") } }],
+        freightAmount: d("0"),
+        discount: null,
+      }),
+    ).toThrow(/100%/);
+  });
+
+  it("erro de desconto aponta o item certo", () => {
+    try {
+      calculateOrderTotals({
+        items: [{ quantity: 1, unitPrice: d("10.00") }, { quantity: 1, unitPrice: d("5.00"), discount: { type: "FIXED", value: d("6.00") } }],
+        freightAmount: d("0"),
+        discount: null,
+      });
+      expect.unreachable();
+    } catch (error) {
+      expect((error as { details: { field: string }[] }).details[0]?.field).toBe("items.1.discount.value");
+    }
+  });
+
+  it("item com 100% de desconto fica em zero e o pedido continua válido", () => {
+    expect(
+      full({ items: [{ quantity: 2, unitPrice: d("10.00"), discount: { type: "PERCENTAGE", value: d("100") } }], freightAmount: d("5.00"), discount: null }),
+    ).toMatchObject({ net: ["0.00"], subtotal: "0.00", total: "5.00" });
+  });
+
+  it("sem descontos nos itens o resultado é igual ao de antes (compatibilidade)", () => {
+    expect(
+      totals({ items: [{ quantity: 40, unitPrice: d("38.90") }], freightAmount: d("120.00"), discount: { type: "PERCENTAGE", value: d("5") } }),
+    ).toEqual({ lineTotals: ["1556.00"], subtotal: "1556.00", freight: "120.00", discount: "77.80", total: "1598.20" });
+  });
+});
