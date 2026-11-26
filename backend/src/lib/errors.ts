@@ -37,8 +37,15 @@ export class UnauthorizedError extends AppError {
 
 /** 403 — está autenticada, mas o perfil não permite a ação. */
 export class ForbiddenError extends AppError {
-  constructor(message = "Seu perfil não tem permissão para esta ação.") {
-    super(message, 403, "FORBIDDEN");
+  constructor(message = "Seu perfil não tem permissão para esta ação.", code = "FORBIDDEN") {
+    super(message, 403, code);
+  }
+}
+
+/** 403 — usuário com senha temporária precisa cadastrar uma senha nova. */
+export class PasswordChangeRequiredError extends ForbiddenError {
+  constructor() {
+    super("Cadastre uma nova senha para continuar.", "PASSWORD_CHANGE_REQUIRED");
   }
 }
 

@@ -7,6 +7,9 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     environment: "node",
+    // Os arquivos de teste compartilham o mesmo banco de teste e o apagam
+    // antes de cada teste; por isso rodam um de cada vez.
+    fileParallelism: false,
     env: {
       NODE_ENV: "test",
       FRONTEND_URL: "http://localhost:5173",

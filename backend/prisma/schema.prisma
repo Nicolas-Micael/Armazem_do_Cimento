@@ -5,7 +5,7 @@
 // arquivo deve gerar uma migration (npm run db:migrate), que é o
 // histórico versionado das alterações do banco.
 //
-// Etapa 1: apenas a tabela de usuários. As demais tabelas
+// Etapa 2: usuários, sessões de login e auditoria. As demais tabelas
 // (clientes, produtos, pedidos, pagamentos...) entram nas etapas
 // seguintes, conforme docs/planejamento-arquitetura.md, seção 5.
 // =============================================================
@@ -27,16 +27,60 @@ enum Role {
 
 /// Usuário que acessa o sistema.
 model User {
-  id           String   @id @default(uuid())
-  name         String
-  email        String   @unique
-  /// Hash da senha (nunca a senha em texto puro).
-  passwordHash String   @map("password_hash")
-  role         Role
+  id                 String    @id @default(uuid())
+  name               String
+  /// Nome de usuário para login, sempre em minúsculas (decisão de 26/11/2026).
+  username           String    @unique
+  /// Hash da senha (nunca a senha em texto puro). Ver src/lib/password.ts.
+  passwordHash       String    @map("password_hash")
+  role               Role
+  /// true quando o ADM definiu uma senha temporária: o usuário precisa
+  /// cadastrar uma senha nova antes de usar o sistema.
+  mustChangePassword Boolean   @default(true) @map("must_change_password")
   /// Usuários são desativados, não apagados, para preservar o histórico.
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  active             Boolean   @default(true)
+  lastLoginAt        DateTime? @map("last_login_at") @db.Timestamptz(3)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  sessions  Session[]
+  auditLogs AuditLog[]
 
   @@map("users")
+}
+
+/// Sessão de login. O navegador guarda um código aleatório num cookie;
+/// aqui guardamos só o HASH desse código, para que um vazamento do
+/// banco não permita entrar no sistema como outra pessoa.
+model Session {
+  id         String    @id @default(uuid())
+  tokenHash  String    @unique @map("token_hash")
+  userId     String    @map("user_id")
+  user       User      @relation(fields: [userId], references: [id])
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(3)
+  /// Preenchido no logout, na troca/redefinição de senha ou ao desativar o usuário.
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(3)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+/// Registro geral de alterações: quem fez, o quê, quando, antes e depois.
+/// Nunca é editado nem apagado.
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id])
+  /// Ex.: "user.create", "user.reset_password".
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  before     Json?
+  after      Json?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
