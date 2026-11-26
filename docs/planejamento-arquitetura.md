@@ -596,20 +596,20 @@ Cada pergunta tem um código para facilitar a resposta (ex.: "P-PED-2: sim"). On
 - **P-USU-3** A sessão deve expirar após quanto tempo? (provisório: 8 horas a partir do login, configurável)
 
 ### Clientes (etapa 4)
-> Implementado com leituras provisórias; ver `docs/decisoes/0005-clientes-produtos.md`.
+> Respondidas em 26/11/2026; ver `docs/decisoes/0005-clientes-produtos.md`.
 - **P-CLI-1** O Financeiro pode cadastrar e editar clientes, ou apenas consultar?
 - **P-CLI-2** CPF/CNPJ é obrigatório? Pode haver cliente sem documento (ex.: venda de balcão)?
 - **P-CLI-3** Um cliente pode ter mais de um endereço de entrega (várias obras)?
 
 ### Produtos (etapa 4)
-> Implementado com leituras provisórias; ver `docs/decisoes/0005-clientes-produtos.md`.
+> Respondidas em 26/11/2026; ver `docs/decisoes/0005-clientes-produtos.md`.
 - **P-PRO-1** Só o ADM altera preços? (a lista do Financeiro diz "consultar produtos")
 - **P-PRO-2** Quais informações distinguem os produtos: marca, tipo (CP II, CP III, CP V…), peso do saco?
 - **P-PRO-3** Existe preço diferente por cliente ou por quantidade, ou um preço único de tabela?
 
 ### Pedidos (etapa 5)
 - **P-PED-1** Formato do número do pedido (ex.: `PED-000123`)? Um número "pulado" por falha técnica é aceitável?
-- **P-PED-2** Quem cria o pedido pode alterar o preço unitário em relação ao preço de tabela? Os dois perfis? Com algum limite?
+- **P-PED-2** O preço de tabela pode ser ajustado no pedido (confirmado em 26/11/2026: o preço é variável e muda conforme alguns fatores). Falta definir: quem pode ajustar (os dois perfis?), se há limite, quais são os fatores e se é preciso registrar o motivo.
 - **P-PED-3** No PDF de um pedido antigo, os dados do cliente devem ser os da época do pedido (sugestão) ou os atuais?
 - **P-PED-4** Venda é sempre em sacos inteiros, ou pode haver frações/outras unidades (tonelada, palete)?
 - **P-PED-5** Regra de arredondamento: duas casas, arredondamento comercial (meio para cima)?

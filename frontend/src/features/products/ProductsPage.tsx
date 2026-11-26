@@ -97,8 +97,7 @@ export function ProductsPage() {
                   <th>Produto</th>
                   <th>Marca</th>
                   <th>Tipo</th>
-                  <th>Saco</th>
-                  <th className="numeric">Preço atual</th>
+                  <th className="numeric">Preço de tabela</th>
                   <th>Situação</th>
                   <th>Ações</th>
                 </tr>
@@ -109,7 +108,6 @@ export function ProductsPage() {
                     <td>{product.name}</td>
                     <td>{product.brand ?? "—"}</td>
                     <td>{product.cementType ?? "—"}</td>
-                    <td>{product.bagWeightKg ? `${product.bagWeightKg.replace(".", ",")} kg` : "—"}</td>
                     <td className="numeric">{formatMoney(product.currentPrice)}</td>
                     <td>{product.active ? "Ativo" : "Inativo"}</td>
                     <td>

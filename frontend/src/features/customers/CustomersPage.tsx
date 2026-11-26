@@ -15,8 +15,9 @@ type Panel = { kind: "none" } | { kind: "create" } | { kind: "edit"; customer: C
 
 export function CustomersPage() {
   const { user } = useAuth();
-  // Só muda o que aparece na tela; o backend é quem bloqueia de verdade.
-  const canManage = user?.role === "ADMIN";
+  // ADM e Financeiro cadastram e editam clientes (P-CLI-1). Isto só muda o
+  // que aparece na tela; o backend é quem bloqueia de verdade.
+  const canManage = user?.role === "ADMIN" || user?.role === "FINANCEIRO";
 
   const fetchPage = useCallback(
     (params: ListParams) => listCustomers(params).then(({ customers, ...page }) => ({ ...page, items: customers })),

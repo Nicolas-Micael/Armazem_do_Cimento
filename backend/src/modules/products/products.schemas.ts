@@ -9,17 +9,6 @@ const priceSchema = moneySchema.refine((value) => Number(value.replace(".", ""))
 // (A comparação acima só confere se o texto não é "0" ou "0.00"; nenhuma
 // conta com o preço é feita em ponto flutuante.)
 
-/** Peso do saco em kg, ex.: "50" ou "25.5". Opcional. */
-const bagWeightSchema = z
-  .string({ error: "Peso inválido." })
-  .trim()
-  .nullable()
-  .optional()
-  .transform((value) => (value === undefined ? undefined : value || null))
-  .refine((value) => value == null || /^\d{1,4}(\.\d{1,2})?$/.test(value), {
-    error: "Peso inválido. Use números com até 2 casas decimais, ex.: 50.",
-  });
-
 const productFields = {
   name: z
     .string({ error: "Informe o nome do produto." })
@@ -28,7 +17,6 @@ const productFields = {
     .max(150, { error: "O nome pode ter no máximo 150 caracteres." }),
   brand: optionalText(100, "Marca"),
   cementType: optionalText(50, "Tipo de cimento"),
-  bagWeightKg: bagWeightSchema,
   currentPrice: priceSchema,
 };
 

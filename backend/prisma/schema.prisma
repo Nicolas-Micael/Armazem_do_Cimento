@@ -122,12 +122,12 @@ model Product {
   brand        String?
   /// Tipo de cimento, ex.: "CP II-E-32", "CP V-ARI".
   cementType   String?  @map("cement_type")
-  /// Peso do saco em quilos, ex.: 50.
-  bagWeightKg  Decimal? @map("bag_weight_kg") @db.Decimal(6, 2)
   /// Unidade de venda. Inicialmente sempre "SACO".
   unit         String   @default("SACO")
-  /// Preço ATUAL de tabela. Cada pedido guardará a sua própria cópia do
-  /// preço praticado, então mudar este valor não altera pedidos antigos.
+  /// Preço de TABELA (pré-fixado). É só o valor sugerido: o preço muda com
+  /// frequência e pode ser ajustado em cada pedido (regras a definir, P-PED-2).
+  /// Cada item de pedido guardará o preço praticado, então mudar este valor
+  /// não altera pedidos antigos.
   currentPrice Decimal  @map("current_price") @db.Decimal(12, 2)
   active       Boolean  @default(true)
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)

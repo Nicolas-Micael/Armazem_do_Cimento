@@ -1,5 +1,6 @@
 // Testes de clientes: validação, busca, permissões e histórico.
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import request from "supertest";
 import { createApp } from "../../app.js";
 import { prisma } from "../../lib/prisma.js";
 import { createTestUser, loginAs, resetDatabase } from "../../../tests/helpers.js";
@@ -146,14 +147,25 @@ describe("busca e listagem", () => {
   });
 });
 
-describe("permissões (provisório, P-CLI-1)", () => {
-  it("Financeiro consulta, mas não cadastra nem edita", async () => {
-    const { admin, financeiro } = await setup();
-    const { body } = await admin.post("/api/customers").send(construtora);
+describe("permissões (P-CLI-1: Financeiro cadastra e edita)", () => {
+  it("Financeiro consulta, cadastra e edita clientes, com registro na auditoria", async () => {
+    const { financeiro } = await setup();
+
+    const created = await financeiro.post("/api/customers").send(construtora);
+    expect(created.status).toBe(201);
+    const id = created.body.customer.id;
 
     expect((await financeiro.get("/api/customers")).status).toBe(200);
-    expect((await financeiro.get(`/api/customers/${body.customer.id}`)).status).toBe(200);
-    expect((await financeiro.post("/api/customers").send({ name: "Teste" })).status).toBe(403);
-    expect((await financeiro.patch(`/api/customers/${body.customer.id}`).send({ active: false })).status).toBe(403);
+    const edited = await financeiro.patch(`/api/customers/${id}`).send({ phone: "(11) 3333-4444" });
+    expect(edited.status).toBe(200);
+
+    const financeiroUser = await prisma.user.findUniqueOrThrow({ where: { username: "caixa1" } });
+    const logs = await prisma.auditLog.findMany({ where: { entityId: id }, orderBy: { createdAt: "asc" } });
+    expect(logs.map((log) => log.action)).toEqual(["customer.create", "customer.update"]);
+    expect(logs.every((log) => log.userId === financeiroUser.id)).toBe(true);
+  });
+
+  it("sem login, não acessa clientes", async () => {
+    expect((await request(app).get("/api/customers")).status).toBe(401);
   });
 });
