@@ -189,9 +189,10 @@ export async function updateOrder(actorId: string, id: string, input: UpdateOrde
     );
     const built = buildItemsAndTotals(input, products);
 
-    // Grava só se a versão ainda for a mesma (proteção contra duas gravações simultâneas).
+    // Grava só se a versão ainda for a mesma E o pedido ainda estiver Pendente (proteção contra
+    // duas gravações simultâneas, inclusive uma confirmação no meio da edição).
     const { count } = await tx.order.updateMany({
-      where: { id, version: input.version },
+      where: { id, version: input.version, status: "PENDING" },
       data: {
         ...orderData(input, built.totals),
         customerId: customer.id,

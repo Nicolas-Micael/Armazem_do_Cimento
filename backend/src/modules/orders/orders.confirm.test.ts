@@ -150,4 +150,30 @@ describe("POST /api/orders/:id/confirm", () => {
     expect(after.body.totals).toMatchObject({ ordersCount: 1, bagsSold: 40, revenue: order.total });
     expect(after.body.pendingOrders.ordersCount).toBe(0);
   });
+
+  it("edição e confirmação ao mesmo tempo: o pedido confirmado nunca muda de valor", async () => {
+    const { admin, financeiro, order, customer, product } = await setup();
+    const [edit, confirm] = await Promise.all([
+      financeiro.put(`/api/orders/${order.id}`).send({
+        version: order.version,
+        customerId: customer.id,
+        items: [{ productId: product.id, quantity: 99 }],
+        freightAmount: "0",
+        paymentTerm: "IMMEDIATE",
+        deliveryMode: "PICKUP",
+      }),
+      admin.post(`/api/orders/${order.id}/confirm`).send({ version: order.version }),
+    ]);
+    // Exatamente uma das duas vale (as duas usam a mesma versão).
+    expect([edit.status, confirm.status].sort()).toEqual([200, 409]);
+
+    const stored = await prisma.order.findUniqueOrThrow({ where: { id: order.id }, include: { items: true } });
+    if (confirm.status === 200) {
+      expect(stored.status).toBe("CONFIRMED");
+      expect(stored.total.toFixed(2)).toBe(order.total); // a edição perdedora não alterou nada
+      expect(stored.items[0]?.quantity).toBe(40);
+    } else {
+      expect(stored.status).toBe("PENDING");
+    }
+  });
 });
