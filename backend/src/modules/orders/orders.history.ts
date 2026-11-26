@@ -18,6 +18,8 @@ export interface OrderHistoryEvent {
   userName: string;
   at: string;
   changes: OrderChange[];
+  /** Motivo informado (retorno de status e cancelamento). */
+  reason: string | null;
 }
 
 type Snapshot = Record<string, unknown>;
@@ -90,6 +92,7 @@ const FIELDS: { field: string; label: string; format: (value: unknown) => string
   { field: "licensePlate", label: "Placa", format: text },
   { field: "loadedBags", label: "Sacos carregados", format: text },
   { field: "expectedDeliveryDate", label: "Data prevista", format: date },
+  { field: "actualDeliveryDate", label: "Data efetiva da entrega/retirada", format: date },
   { field: "deliveryNotes", label: "Observações da entrega", format: text },
   { field: "notes", label: "Observações", format: text },
 ];
@@ -110,6 +113,9 @@ const TITLES: Record<string, string> = {
   "order.create": "Saída registrada",
   "order.update": "Saída editada",
   "order.confirm": "Saída confirmada",
+  "order.advance": "Situação avançada",
+  "order.revert": "Situação retornada",
+  "order.cancel": "Saída cancelada",
 };
 
 export async function getOrderHistory(orderId: string): Promise<{ events: OrderHistoryEvent[] }> {
@@ -129,6 +135,7 @@ export async function getOrderHistory(orderId: string): Promise<{ events: OrderH
       userName: log.user.name,
       at: log.createdAt.toISOString(),
       changes: diffOrderSnapshots(log.before as Snapshot | null, log.after as Snapshot | null),
+      reason: typeof (log.after as Snapshot | null)?.reason === "string" ? ((log.after as Snapshot).reason as string) : null,
     })),
   };
 }

@@ -127,3 +127,34 @@ export const confirmOrderSchema = z.object({
 });
 
 export type ConfirmOrderInput = z.infer<typeof confirmOrderSchema>;
+
+const reasonSchema = z
+  .string({ error: "Informe o motivo." })
+  .trim()
+  .min(3, { error: "Informe o motivo (mínimo 3 caracteres)." })
+  .max(500, { error: "Motivo: no máximo 500 caracteres." });
+
+const versionSchema = z.number({ error: "Informe a versão do pedido." }).int().min(1);
+
+/** Avançar o status operacional. `deliveredAt` (AAAA-MM-DD) só vale ao concluir; padrão: hoje (Brasília). */
+export const advanceOrderSchema = z
+  .object({
+    to: z.enum(["PICKING", "OUT_FOR_DELIVERY", "COMPLETED"], { error: "Escolha o novo status." }),
+    version: versionSchema,
+    deliveredAt: optionalDate,
+    note: optionalText(500, "Observação"),
+  })
+  .refine((value) => !value.deliveredAt || value.to === "COMPLETED", {
+    error: "A data efetiva só vale ao concluir a saída.",
+    path: ["deliveredAt"],
+  });
+
+/** Retornar um passo (só ADM): motivo obrigatório. */
+export const revertOrderSchema = z.object({ version: versionSchema, reason: reasonSchema });
+
+/** Cancelar (só ADM): motivo obrigatório. */
+export const cancelOrderSchema = z.object({ version: versionSchema, reason: reasonSchema });
+
+export type AdvanceOrderInput = z.infer<typeof advanceOrderSchema>;
+export type RevertOrderInput = z.infer<typeof revertOrderSchema>;
+export type CancelOrderInput = z.infer<typeof cancelOrderSchema>;

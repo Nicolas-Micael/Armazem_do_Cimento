@@ -32,7 +32,7 @@ export function initialStatus(method: PaymentMethod): PaymentStatus {
 const brl = (value: Decimal) => `R$ ${moneyToString(value).replace(".", ",")}`;
 
 /** Bloqueia a linha da saída até o fim da transação: serializa quem mexe no mesmo pedido. */
-async function lockOrder(tx: Tx, orderId: string) {
+export async function lockOrder(tx: Tx, orderId: string) {
   const rows = await tx.$queryRaw<{ id: string }[]>`SELECT "id" FROM "orders" WHERE "id" = ${orderId} FOR UPDATE`;
   if (rows.length === 0) throw new NotFoundError("Saída não encontrada.");
 }

@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { parseQuery } from "../../middlewares/validate.js";
 import * as ordersService from "./orders.service.js";
+import * as statusService from "./orders.status.service.js";
 import { orderListQuerySchema } from "./orders.schemas.js";
 import { getOrderHistory } from "./orders.history.js";
 
@@ -33,4 +34,16 @@ export async function confirm(req: Request<{ id: string }>, res: Response) {
 
 export async function history(req: Request<{ id: string }>, res: Response) {
   res.json(await getOrderHistory(req.params.id));
+}
+
+export async function advance(req: Request<{ id: string }>, res: Response) {
+  res.json({ order: await statusService.advanceOrder(req.auth!.user.id, req.params.id, req.body) });
+}
+
+export async function revert(req: Request<{ id: string }>, res: Response) {
+  res.json({ order: await statusService.revertOrder(req.auth!.user.id, req.params.id, req.body) });
+}
+
+export async function cancel(req: Request<{ id: string }>, res: Response) {
+  res.json({ order: await statusService.cancelOrder(req.auth!.user.id, req.params.id, req.body) });
 }
