@@ -11,6 +11,9 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3333),
   FRONTEND_URL: z.url(),
   DATABASE_URL: z.string().startsWith("postgresql://"),
+  // Tempo de vida da sessão de login, em horas. PROVISÓRIO: depende da
+  // pergunta P-USU-3 do planejamento.
+  SESSION_TTL_HOURS: z.coerce.number().int().positive().max(720).default(8),
 });
 
 const parsed = envSchema.safeParse(process.env);

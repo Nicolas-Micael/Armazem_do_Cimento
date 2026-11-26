@@ -310,7 +310,7 @@ enum AccountKind    { BANK  CASH_REGISTER  CHECK_WALLET }
 model User {
   id           String   @id @default(uuid())
   name         String
-  email        String   @unique
+  username     String   @unique      // login por nome de usuário (P-USU-1)
   passwordHash String                         // nunca a senha em texto
   role         Role
   active       Boolean  @default(true)        // desativar em vez de apagar
@@ -584,16 +584,16 @@ Cada etapa traz seus testes. Os mais importantes, exigidos pelo arquivo de regra
 Cada pergunta tem um código para facilitar a resposta (ex.: "P-PED-2: sim"). Onde há uma sugestão, ela está marcada como **sugestão** e só vale depois da sua confirmação.
 
 ### Infraestrutura e projeto (bloqueiam a etapa 0–1)
-- **P-INF-1** Em que computador você vai desenvolver (Windows, macOS ou Linux)? Pode instalar Docker? (sugestão: Docker para o PostgreSQL local)
-- **P-INF-4** Onde o código vai ficar: um repositório no GitHub (sugestão, privado) ou uma pasta no seu computador?
+- ~~**P-INF-1**~~ ✅ **Respondida (26/11/2026):** Windows, com Docker Desktop e WSL 2.
+- ~~**P-INF-4**~~ ✅ **Respondida (26/11/2026):** repositório `Nicolas-Micael/Armazem_do_Cimento` no GitHub.
 - **P-INF-2** Há orçamento mensal definido para hospedagem? Os dados precisam ficar em servidores no Brasil?
 - **P-INF-3** A empresa tem (ou quer) um domínio próprio, como `pedidos.armazemdocimento.com.br`?
 - **P-INF-5** Quem será o responsável por acompanhar os backups e testar a restauração?
 
 ### Usuários e acesso (etapa 2)
-- **P-USU-1** Login por e-mail ou por nome de usuário?
-- **P-USU-2** Se alguém esquecer a senha, o ADM redefine (sugestão) ou haverá recuperação por e-mail?
-- **P-USU-3** A sessão deve expirar após quanto tempo sem uso?
+- ~~**P-USU-1**~~ ✅ **Respondida (26/11/2026):** login por nome de usuário.
+- ~~**P-USU-2**~~ ✅ **Respondida (26/11/2026):** o ADM redefine com uma senha temporária; o funcionário cadastra uma senha nova no próximo acesso.
+- **P-USU-3** A sessão deve expirar após quanto tempo? (provisório: 8 horas a partir do login, configurável)
 
 ### Clientes (etapa 4)
 - **P-CLI-1** O Financeiro pode cadastrar e editar clientes, ou apenas consultar?
