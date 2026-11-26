@@ -6,7 +6,7 @@ import { ConflictError, NotFoundError, ValidationError } from "../../lib/errors.
 import { recordAudit } from "../audit/audit.service.js";
 import { calculateOrderTotals } from "./orders.calculations.js";
 import { orderAuditSnapshot, orderInclude, toPublicOrder } from "./orders.mapper.js";
-import type { CreateOrderInput, OrderListQuery, PreviewOrderInput, UpdateOrderInput } from "./orders.schemas.js";
+import type { ConfirmOrderInput, CreateOrderInput, OrderListQuery, PreviewOrderInput, UpdateOrderInput } from "./orders.schemas.js";
 
 type Tx = Prisma.TransactionClient;
 
@@ -257,4 +257,52 @@ export async function listOrders(query: OrderListQuery) {
   ]);
 
   return { orders: orders.map(toPublicOrder), total, page: query.page, pageSize: query.pageSize };
+}
+
+/**
+ * Confirma uma saída: Pendente → Confirmado (só ADM; a rota já barra os outros perfis).
+ *
+ * Garantias:
+ * - só pedido Pendente pode ser confirmado (não confirma duas vezes nem um cancelado);
+ * - a `version` enviada precisa ser a atual: os valores confirmados são os que a pessoa viu;
+ * - a mudança, o registro no histórico de status e a auditoria acontecem juntos (transação);
+ * - os valores do pedido NÃO são alterados aqui. Depois de confirmado o pedido não é mais
+ *   editável (updateOrder só aceita Pendente), então nenhum valor muda sem deixar registro.
+ */
+export async function confirmOrder(actorId: string, id: string, input: ConfirmOrderInput) {
+  const order = await prisma.$transaction(async (tx) => {
+    const current = await tx.order.findUnique({ where: { id }, include: orderInclude });
+    if (!current) throw new NotFoundError("Pedido não encontrado.");
+    if (current.status !== "PENDING") {
+      throw new ConflictError("Só pedidos pendentes podem ser confirmados.");
+    }
+    if (current.version !== input.version) {
+      throw new ConflictError("Este pedido foi alterado por outra pessoa. Recarregue a página e confira antes de confirmar.");
+    }
+
+    // O "where" com status e versão faz a troca só acontecer se nada mudou desde a leitura.
+    const { count } = await tx.order.updateMany({
+      where: { id, version: input.version, status: "PENDING" },
+      data: { status: "CONFIRMED", version: { increment: 1 } },
+    });
+    if (count === 0) {
+      throw new ConflictError("Este pedido foi alterado por outra pessoa. Recarregue a página e confira antes de confirmar.");
+    }
+
+    await tx.orderStatusHistory.create({
+      data: { orderId: id, fromStatus: "PENDING", toStatus: "CONFIRMED", changedById: actorId, note: input.note ?? null },
+    });
+
+    const confirmed = await tx.order.findUniqueOrThrow({ where: { id }, include: orderInclude });
+    await recordAudit(tx, {
+      userId: actorId,
+      action: "order.confirm",
+      entityType: "order",
+      entityId: id,
+      before: orderAuditSnapshot(current),
+      after: orderAuditSnapshot(confirmed),
+    });
+    return confirmed;
+  });
+  return toPublicOrder(order);
 }

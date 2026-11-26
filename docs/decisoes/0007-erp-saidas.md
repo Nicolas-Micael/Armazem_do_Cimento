@@ -49,4 +49,22 @@ Endpoint `GET /api/dashboard?from=AAAA-MM-DD&to=AAAA-MM-DD` (ADM e Financeiro). 
 
 **Não calculado (de propósito):** valor recebido, saldo a receber e recebimentos por forma de pagamento. Dependem dos pagamentos (etapa D); mostrar agora seria inventar número.
 
-**Atenção:** ainda não existe a ação de confirmar uma saída (etapa E). Até lá, todo pedido novo fica Pendente e o painel mostra zeros para as saídas efetivadas. Nos testes, as situações são gravadas direto no banco.
+Decisões confirmadas pelo Nicolas em 26/11/2026: P-DASH-1 (período pela data de registro do pedido) e P-DASH-2 (faturamento = produtos + frete − descontos, independentemente de ter sido recebido). A ação de confirmar, que alimenta o painel, está na seção seguinte.
+
+## Confirmação de saída (antecipada da etapa E)
+
+`POST /api/orders/:id/confirm` com `{ "version": n, "note": "opcional" }`.
+
+Decisões do Nicolas (26/11/2026), P-STA:
+- **Só o ADM confirma.** O Financeiro vê a saída (e continua editando enquanto Pendente), mas não confirma: a rota responde 403 e a tela nem mostra o botão.
+- A confirmação exige **confirmação explícita** na tela (painel com cliente, sacos e total, e aviso de que depois não se edita).
+- Registra **quem e quando** no histórico de status (com observação opcional) e na auditoria (`order.confirm`, com o pedido inteiro antes e depois).
+- Pendente → Confirmado; a saída passa a contar no painel.
+
+Integridade (nada financeiro muda sem registro):
+- Só Pendente pode ser confirmado; cancelado ou já confirmado → 409. Duas confirmações simultâneas: só uma vale (teste).
+- A `version` enviada precisa ser a atual: se o pedido foi editado depois que o ADM abriu a tela, a confirmação é recusada e o ADM confere os novos valores antes de confirmar.
+- A confirmação **não altera nenhum valor** do pedido. Depois de confirmado, o pedido deixa de ser editável (só Pendente edita), então preços, itens, frete e desconto ficam congelados.
+- Mudança, histórico e auditoria são gravados na mesma transação.
+
+Ainda não implementado (etapa E): Em separação, Saiu para entrega, Concluído e Cancelado (com motivo). Quem pode alterar um pedido já confirmado continua em aberto (P-PED-6/7).

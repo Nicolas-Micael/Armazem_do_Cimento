@@ -1,16 +1,27 @@
 // Detalhe de um pedido: dados, itens, valores, entrega e histórico de status.
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
-import { getOrder, type Order } from "../../api/orders";
+import { ApiError } from "../../api/client";
+import { confirmOrder, getOrder, type Order } from "../../api/orders";
 import { formatDate, formatDateTime, formatDocument, formatMoney } from "../../lib/format";
 import { DELIVERY_MODE_LABELS, ORDER_STATUS_LABELS, PAYMENT_TERM_LABELS } from "../../lib/labels";
 import { FormErrors } from "../../components/FormErrors";
+import { formatInteger } from "../../lib/format";
+import { useAuth } from "../auth/AuthContext";
 import { StatusBadge } from "./StatusBadge";
 
 export function OrderDetailPage() {
   const { id } = useParams();
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState<unknown>(null);
+  const { user } = useAuth();
+  // Só o ADM confirma (o backend também bloqueia os outros perfis).
+  const canConfirm = user?.role === "ADMIN";
+  const [confirming, setConfirming] = useState(false);
+  const [note, setNote] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [confirmError, setConfirmError] = useState<unknown>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -18,6 +29,34 @@ export function OrderDetailPage() {
       .then(({ order }) => setOrder(order))
       .catch(setError);
   }, [id]);
+
+  async function handleConfirm() {
+    if (!order) return;
+    setSubmitting(true);
+    setConfirmError(null);
+    try {
+      const { order: confirmed } = await confirmOrder(order.id, { version: order.version, note: note.trim() || undefined });
+      setOrder(confirmed);
+      setConfirming(false);
+      setNote("");
+      setNotice(`Saída ${confirmed.code} confirmada. Ela já aparece nos indicadores do painel.`);
+    } catch (err) {
+      setConfirmError(err);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function reloadOrder() {
+    if (!id) return;
+    setConfirmError(null);
+    try {
+      setOrder((await getOrder(id)).order);
+      setConfirming(false);
+    } catch (err) {
+      setError(err);
+    }
+  }
 
   if (error) return <FormErrors error={error} />;
   if (!order) return <p className="page-message">Carregando pedido…</p>;
@@ -32,8 +71,13 @@ export function OrderDetailPage() {
           Pedido {order.code} <StatusBadge status={order.status} />
         </h1>
         <div className="form-actions">
+          {order.status === "PENDING" && canConfirm && !confirming && (
+            <button type="button" className="button-primary" onClick={() => setConfirming(true)}>
+              Confirmar saída
+            </button>
+          )}
           {order.status === "PENDING" && (
-            <Link to={`/pedidos/${order.id}/editar`} className="button-primary">
+            <Link to={`/pedidos/${order.id}/editar`} className="button-secondary">
               Editar
             </Link>
           )}
@@ -42,6 +86,43 @@ export function OrderDetailPage() {
           </Link>
         </div>
       </div>
+
+      {notice && <div className="alert alert-success">{notice}</div>}
+      {order.status === "PENDING" && !canConfirm && (
+        <p className="alert alert-notice">Esta saída está pendente e aguarda confirmação do ADM. Enquanto isso, ela pode ser editada e não entra nos indicadores.</p>
+      )}
+
+      {confirming && canConfirm && (
+        <section className="card confirm-panel" role="alertdialog" aria-labelledby="confirm-title">
+          <h2 id="confirm-title">Confirmar a saída {order.code}?</h2>
+          <p>
+            Cliente <strong>{order.customerName}</strong> · {formatInteger(order.items.reduce((sum, item) => sum + item.quantity, 0))} sacos ·
+            total <strong>{formatMoney(order.total)}</strong>
+          </p>
+          <p className="muted small">
+            Depois de confirmada, a saída passa a contar nos indicadores e <strong>não poderá mais ser editada</strong>. A confirmação fica registrada
+            com seu nome, a data e a hora.
+          </p>
+          <FormErrors error={confirmError} />
+          <label>
+            Observação (opcional)
+            <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} />
+          </label>
+          <div className="form-actions">
+            <button type="button" className="button-primary" onClick={() => void handleConfirm()} disabled={submitting}>
+              {submitting ? "Confirmando…" : "Sim, confirmar saída"}
+            </button>
+            <button type="button" className="button-secondary" onClick={() => setConfirming(false)} disabled={submitting}>
+              Voltar
+            </button>
+            {confirmError instanceof ApiError && confirmError.status === 409 && (
+              <button type="button" className="button-link" onClick={() => void reloadOrder()}>
+                Recarregar pedido
+              </button>
+            )}
+          </div>
+        </section>
+      )}
 
       <section className="card info-grid">
         <div>
