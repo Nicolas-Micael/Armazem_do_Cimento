@@ -319,8 +319,25 @@ export async function listOrders(query: OrderListQuery) {
     summarize({ AND: [where, { status: "PENDING" }] }),
   ]);
 
+  // Recebido (só pagamentos Confirmados) e saldo a receber de cada saída da página.
+  const confirmed = await prisma.payment.groupBy({
+    by: ["orderId"],
+    where: { orderId: { in: orders.map((order) => order.id) }, status: "CONFIRMED" },
+    _sum: { amount: true },
+  });
+  const receivedByOrder = new Map(confirmed.map((row) => [row.orderId, new Decimal(row._sum.amount?.toString() ?? "0")]));
+
   return {
-    orders: orders.map(toPublicOrder),
+    orders: orders.map((order) => {
+      const received = receivedByOrder.get(order.id) ?? new Decimal(0);
+      const effective = (EFFECTIVE_STATUSES as readonly string[]).includes(order.status);
+      return {
+        ...toPublicOrder(order),
+        received: received.toFixed(2),
+        // Pendente e Cancelada não têm saldo a receber.
+        balance: effective ? new Decimal(order.total.toString()).minus(received).toFixed(2) : null,
+      };
+    }),
     total,
     page: query.page,
     pageSize: query.pageSize,

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { getDashboard, type DashboardData, type Period, type Totals } from "../../api/dashboard";
 import { getHealth, type HealthResponse } from "../../api/health";
+import { PAYMENT_METHOD_LABELS } from "../../lib/labels";
 import { formatDate, formatDateTime, formatInteger, formatMoney, formatVariation } from "../../lib/format";
 import { PRESET_LABELS, presetPeriod, type PresetId } from "../../lib/period";
 import { FormErrors } from "../../components/FormErrors";
@@ -125,6 +126,76 @@ export function HomePage() {
             Comparação com o período anterior ({formatDate(data.previousPeriod.from)} a {formatDate(data.previousPeriod.to)}).
           </p>
 
+          <h2 className="section-title">Financeiro</h2>
+          <section className="kpi-grid" aria-label="Indicadores financeiros">
+            <div className="kpi">
+              <span className="kpi-label">Recebido no período</span>
+              <strong className="kpi-value">{formatMoney(data.financial.received.total)}</strong>
+              <span className="muted small">
+                Confirmado {formatMoney(data.financial.received.confirmed)} − estornado {formatMoney(data.financial.received.reversed)}
+              </span>
+            </div>
+            <div className="kpi">
+              <span className="kpi-label">A receber (hoje)</span>
+              <strong className="kpi-value">{formatMoney(data.financial.receivable)}</strong>
+              <span className="muted small">Saídas confirmadas − recebido, de todos os períodos</span>
+            </div>
+            <div className={`kpi${data.financial.overdue.total !== "0.00" ? " kpi-alert" : ""}`}>
+              <span className="kpi-label">Em atraso</span>
+              <strong className="kpi-value">{formatMoney(data.financial.overdue.total)}</strong>
+              <span className="muted small">
+                {formatInteger(data.financial.overdue.dueDatesCount)} vencimento(s) em {formatInteger(data.financial.overdue.ordersCount)} saída(s)
+              </span>
+            </div>
+            <div className="kpi kpi-pending">
+              <span className="kpi-label">A compensar (cheques)</span>
+              <strong className="kpi-value">{formatMoney(data.financial.toClear.total)}</strong>
+              <span className="muted small">{formatInteger(data.financial.toClear.paymentsCount)} cheque(s) — ainda não recebido</span>
+            </div>
+            <div className="kpi kpi-pending">
+              <span className="kpi-label">Pendentes de conferência</span>
+              <strong className="kpi-value">{formatMoney(data.financial.pendingConference.total)}</strong>
+              <span className="muted small">{formatInteger(data.financial.pendingConference.paymentsCount)} pagamento(s) — ainda não recebido</span>
+            </div>
+          </section>
+          <p className="muted small kpi-note">
+            Recebido = confirmações do período − estornos do período, cada um na data em que aconteceu (cheque, na data da compensação). A compensar e Pendentes não contam como recebido.
+          </p>
+
+          <div className="dash-two">
+            <section className="card">
+              <h2>Recebido por forma de pagamento</h2>
+              {data.financial.receivedByMethod.length === 0 ? (
+                <p className="muted">Nenhum movimento de recebimento no período.</p>
+              ) : (
+                <BarList
+                  rows={data.financial.receivedByMethod.map((row) => ({
+                    key: row.method,
+                    name: PAYMENT_METHOD_LABELS[row.method],
+                    value: Number(row.total),
+                    detail: `${formatMoney(row.total)} · ${formatInteger(row.paymentsCount)} pag.`,
+                  }))}
+                />
+              )}
+            </section>
+            <section className="card">
+              <h2>Recebido por conta</h2>
+              {data.financial.receivedByAccount.length === 0 ? (
+                <p className="muted">Nenhum movimento de recebimento no período.</p>
+              ) : (
+                <BarList
+                  rows={data.financial.receivedByAccount.map((row) => ({
+                    key: row.accountId,
+                    name: row.accountName,
+                    value: Number(row.total),
+                    detail: `${formatMoney(row.total)} · ${formatInteger(row.paymentsCount)} pag.`,
+                  }))}
+                />
+              )}
+            </section>
+          </div>
+
+          <h2 className="section-title">Vendas</h2>
           <section className="card">
             <div className="card-head">
               <h2>Evolução por dia</h2>
@@ -238,7 +309,7 @@ export function HomePage() {
           </section>
 
           <p className="muted small">
-            Não há ainda indicadores de valor recebido ou saldo a receber: eles dependem do módulo de pagamentos.
+            Valores em Real, calculados dos dados gravados no banco.
             {health && ` · Sistema: API ${health.status === "ok" ? "no ar" : "com problemas"}, banco ${health.database === "ok" ? "conectado" : "indisponível"}.`}
           </p>
         </>

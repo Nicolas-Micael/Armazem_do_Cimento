@@ -61,7 +61,7 @@ export function BarList({ rows }: { rows: BarRow[] }) {
             <span className="muted small">{row.detail}</span>
           </div>
           <div className="bar-track">
-            <div className="bar-fill" style={{ width: max === 0 ? "0%" : `${(row.value / max) * 100}%` }} />
+            <div className="bar-fill" style={{ width: max <= 0 ? "0%" : `${Math.max(0, row.value / max) * 100}%` }} />
           </div>
         </li>
       ))}

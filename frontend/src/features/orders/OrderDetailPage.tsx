@@ -8,6 +8,7 @@ import { DELIVERY_MODE_LABELS, OPERATION_TYPE_LABELS, PAYMENT_TERM_LABELS } from
 import { FormErrors } from "../../components/FormErrors";
 import { formatInteger } from "../../lib/format";
 import { useAuth } from "../auth/AuthContext";
+import { PaymentsSection } from "../payments/PaymentsSection";
 import { StatusBadge } from "./StatusBadge";
 
 export function OrderDetailPage() {
@@ -282,6 +283,8 @@ export function OrderDetailPage() {
           <dd className="total">{formatMoney(order.total)}</dd>
         </dl>
       </section>
+
+      {order.status !== "PENDING" && <PaymentsSection key={`${order.status}-${order.version}`} orderId={order.id} orderTotal={order.total} />}
 
       <section className="card">
         <h2>Histórico de alterações</h2>

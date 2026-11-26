@@ -39,6 +39,17 @@ const FIELD_LABELS: Record<string, string> = {
   licensePlate: "Placa",
   loadedBags: "Sacos carregados",
   operationType: "Tipo de operação",
+  amount: "Valor",
+  method: "Meio de pagamento",
+  accountId: "Conta de destino",
+  receivedAt: "Data do recebimento",
+  reason: "Motivo",
+  check: "Cheque",
+  "check.number": "Número do cheque",
+  "check.bank": "Banco do cheque",
+  "check.expectedClearingDate": "Data prevista de compensação",
+  dueDates: "Vencimentos",
+  note: "Observação",
 };
 
 /** "items.0.quantity" → "Item 1 — quantidade". */
