@@ -7,6 +7,9 @@ import { HomePage } from "./features/home/HomePage";
 import { UsersPage } from "./features/users/UsersPage";
 import { CustomersPage } from "./features/customers/CustomersPage";
 import { ProductsPage } from "./features/products/ProductsPage";
+import { OrdersPage } from "./features/orders/OrdersPage";
+import { OrderFormPage } from "./features/orders/OrderFormPage";
+import { OrderDetailPage } from "./features/orders/OrderDetailPage";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 import { Layout } from "./components/Layout";
 
@@ -33,6 +36,10 @@ export function App() {
             }
           >
             <Route index element={<HomePage />} />
+            <Route path="/pedidos" element={<OrdersPage />} />
+            <Route path="/pedidos/novo" element={<OrderFormPage />} />
+            <Route path="/pedidos/:id" element={<OrderDetailPage />} />
+            <Route path="/pedidos/:id/editar" element={<OrderFormPage key="editar" />} />
             <Route path="/clientes" element={<CustomersPage />} />
             <Route path="/produtos" element={<ProductsPage />} />
             <Route

@@ -608,8 +608,10 @@ Cada pergunta tem um código para facilitar a resposta (ex.: "P-PED-2: sim"). On
 - **P-PRO-3** Existe preço diferente por cliente ou por quantidade, ou um preço único de tabela?
 
 ### Pedidos (etapa 5)
+> Leituras provisórias adotadas na etapa 5: ver `docs/decisoes/0006-pedidos.md`.
+
 - **P-PED-1** Formato do número do pedido (ex.: `PED-000123`)? Um número "pulado" por falha técnica é aceitável?
-- **P-PED-2** O preço de tabela pode ser ajustado no pedido (confirmado em 26/11/2026: o preço é variável e muda conforme alguns fatores). Falta definir: quem pode ajustar (os dois perfis?), se há limite, quais são os fatores e se é preciso registrar o motivo.
+- ✅ **P-PED-2** Respondida (26/11/2026): ADM e Financeiro alteram o preço do item, sem limite e sem motivo; o sistema só registra o valor digitado.
 - **P-PED-3** No PDF de um pedido antigo, os dados do cliente devem ser os da época do pedido (sugestão) ou os atuais?
 - **P-PED-4** Venda é sempre em sacos inteiros, ou pode haver frações/outras unidades (tonelada, palete)?
 - **P-PED-5** Regra de arredondamento: duas casas, arredondamento comercial (meio para cima)?

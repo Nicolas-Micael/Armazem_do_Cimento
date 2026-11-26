@@ -15,6 +15,7 @@ export function Layout() {
           <NavLink to="/" end>
             Início
           </NavLink>
+          <NavLink to="/pedidos">Pedidos</NavLink>
           <NavLink to="/clientes">Clientes</NavLink>
           <NavLink to="/produtos">Produtos</NavLink>
           {/* O menu de usuários só aparece para o ADM (e o backend também bloqueia). */}

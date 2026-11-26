@@ -12,6 +12,7 @@ import { authRouter } from "./modules/auth/auth.routes.js";
 import { usersRouter } from "./modules/users/users.routes.js";
 import { customersRouter } from "./modules/customers/customers.routes.js";
 import { productsRouter } from "./modules/products/products.routes.js";
+import { ordersRouter } from "./modules/orders/orders.routes.js";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
 
 export function createApp() {
@@ -37,7 +38,8 @@ export function createApp() {
   app.use("/api/users", usersRouter);
   app.use("/api/customers", customersRouter);
   app.use("/api/products", productsRouter);
-  // As próximas etapas adicionam aqui: /api/orders, /api/payments...
+  app.use("/api/orders", ordersRouter);
+  // As próximas etapas adicionam aqui: /api/payments...
 
   // ---- Tratamento de rotas inexistentes e de erros (sempre por último) ----
   app.use("/api", notFoundHandler);

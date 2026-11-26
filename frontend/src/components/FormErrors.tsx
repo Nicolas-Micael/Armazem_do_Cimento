@@ -22,7 +22,26 @@ const FIELD_LABELS: Record<string, string> = {
   brand: "Marca",
   cementType: "Tipo de cimento",
   currentPrice: "Preço",
+  customerId: "Cliente",
+  items: "Itens",
+  freightAmount: "Frete",
+  "discount.value": "Desconto",
+  discount: "Desconto",
+  paymentTerm: "Condição de pagamento",
+  deliveryMode: "Modalidade de entrega",
+  deliveryAddress: "Endereço de entrega",
+  deliveryResponsible: "Responsável pela entrega",
+  expectedDeliveryDate: "Data prevista",
+  deliveryNotes: "Observações da entrega",
 };
+
+/** "items.0.quantity" → "Item 1 — quantidade". */
+function itemLabel(field: string): string | null {
+  const match = /^items\.(\d+)\.(\w+)$/.exec(field);
+  if (!match) return null;
+  const names: Record<string, string> = { productId: "produto", quantity: "quantidade", unitPrice: "preço" };
+  return `Item ${Number(match[1]) + 1} — ${names[match[2] ?? ""] ?? match[2]}`;
+}
 
 export function FormErrors({ error }: { error: unknown }) {
   if (!error) return null;
@@ -36,7 +55,7 @@ export function FormErrors({ error }: { error: unknown }) {
         <ul>
           {fieldErrors.map((fieldError) => (
             <li key={fieldError.field + fieldError.message}>
-              <strong>{FIELD_LABELS[fieldError.field] ?? fieldError.field}:</strong> {fieldError.message}
+              <strong>{FIELD_LABELS[fieldError.field] ?? itemLabel(fieldError.field) ?? fieldError.field}:</strong> {fieldError.message}
             </li>
           ))}
         </ul>
