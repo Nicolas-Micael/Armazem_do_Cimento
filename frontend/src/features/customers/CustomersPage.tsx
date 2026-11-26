@@ -1,5 +1,6 @@
 // Tela de clientes: busca, lista e (para o ADM) cadastro, edição e desativação.
 import { useCallback, useState } from "react";
+import { useSearchParams } from "react-router";
 import { listCustomers, updateCustomer } from "../../api/customers";
 import type { ListParams } from "../../api/listParams";
 import type { Customer } from "../../api/types";
@@ -24,7 +25,9 @@ export function CustomersPage() {
     [],
   );
   const list = useList<Customer>(fetchPage);
-  const [panel, setPanel] = useState<Panel>({ kind: "none" });
+  // O atalho do painel abre direto o formulário: /clientes?novo=1
+  const [params] = useSearchParams();
+  const [panel, setPanel] = useState<Panel>(() => (params.get("novo") === "1" && canManage ? { kind: "create" } : { kind: "none" }));
   const [notice, setNotice] = useState<string | null>(null);
   const [actionError, setActionError] = useState<unknown>(null);
 

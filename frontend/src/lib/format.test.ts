@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   formatDate,
+  formatInteger,
+  formatVariation,
   formatDateTime,
   formatDocument,
   formatMoney,
@@ -63,5 +65,17 @@ describe("formatDate", () => {
   it("formata data de calendário sem mudar o dia por causa do fuso", () => {
     expect(formatDate("2026-11-30")).toBe("30/11/2026");
     expect(formatDate(null)).toBe("");
+  });
+});
+
+describe("formatInteger e formatVariation", () => {
+  it("formata sacos no padrão brasileiro", () => {
+    expect(formatInteger(1234567)).toBe("1.234.567");
+    expect(formatInteger(0)).toBe("0");
+  });
+  it("formata variação com sinal e vírgula", () => {
+    expect(formatVariation("12.5")).toBe("+12,5%");
+    expect(formatVariation("-3.0")).toBe("−3,0%");
+    expect(formatVariation("0.0")).toBe("0,0%");
   });
 });

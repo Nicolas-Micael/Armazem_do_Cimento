@@ -13,6 +13,7 @@ import { usersRouter } from "./modules/users/users.routes.js";
 import { customersRouter } from "./modules/customers/customers.routes.js";
 import { productsRouter } from "./modules/products/products.routes.js";
 import { ordersRouter } from "./modules/orders/orders.routes.js";
+import { dashboardRouter } from "./modules/dashboard/dashboard.routes.js";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
 
 export function createApp() {
@@ -39,6 +40,7 @@ export function createApp() {
   app.use("/api/customers", customersRouter);
   app.use("/api/products", productsRouter);
   app.use("/api/orders", ordersRouter);
+  app.use("/api/dashboard", dashboardRouter);
   // As próximas etapas adicionam aqui: /api/payments...
 
   // ---- Tratamento de rotas inexistentes e de erros (sempre por último) ----
