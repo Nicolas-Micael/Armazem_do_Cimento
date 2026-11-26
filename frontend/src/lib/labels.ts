@@ -1,5 +1,5 @@
 // Textos em português para os códigos que vêm da API.
-import type { DeliveryMode, OrderStatus, PaymentTerm } from "../api/orders";
+import type { DeliveryMode, OperationType, OrderStatus, PaymentTerm } from "../api/orders";
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   PENDING: "Pendente",
@@ -12,12 +12,17 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 
 export const PAYMENT_TERM_LABELS: Record<PaymentTerm, string> = {
   IMMEDIATE: "À vista",
-  TERM_10_DAYS: "A prazo — 10 dias",
-  TERM_15_DAYS: "A prazo — 15 dias",
-  NEGOTIATED: "A prazo — negociado",
+  TERM_10_DAYS: "10 dias",
+  TERM_15_DAYS: "15 dias",
+  TERM_30_DAYS: "30 dias",
+  NEGOTIATED: "Prazo negociado",
 };
 
 export const DELIVERY_MODE_LABELS: Record<DeliveryMode, string> = {
   DELIVERY: "Entrega",
   PICKUP: "Retirada pelo cliente",
+};
+
+export const OPERATION_TYPE_LABELS: Record<OperationType, string> = {
+  SALE: "Venda",
 };

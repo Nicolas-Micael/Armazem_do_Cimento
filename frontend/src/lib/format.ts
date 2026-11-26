@@ -84,3 +84,22 @@ export function formatVariation(value: string): string {
   const sign = negative ? "−" : value === "0.0" ? "" : "+";
   return `${sign}${digits.replace(".", ",")}%`;
 }
+
+/**
+ * Limpa o que a pessoa digita num campo de dinheiro/percentual: só dígitos,
+ * uma vírgula e no máximo 2 casas decimais. O ponto vira vírgula (quem digita
+ * "38.9" quer dizer "38,9"). Recebe: "R$ 1a2,345" · Retorna: "12,34".
+ */
+export function sanitizeMoneyInput(raw: string): string {
+  const text = raw.replace(/[^\d.,]/g, "").replace(/\./g, ",");
+  const [integer = "", ...rest] = text.split(",");
+  if (rest.length === 0) return integer;
+  return `${integer},${rest.join("").slice(0, 2)}`;
+}
+
+/** Ao sair do campo completa as casas: "38" → "38,00"; "38,9" → "38,90"; "" → "". */
+export function completeMoneyInput(value: string): string {
+  if (!value) return "";
+  const [integer = "", decimals = ""] = value.split(",");
+  return `${integer || "0"},${decimals.padEnd(2, "0")}`;
+}

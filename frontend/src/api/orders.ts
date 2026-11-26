@@ -2,9 +2,11 @@ import { apiRequest, jsonBody } from "./client";
 import type { Page } from "./types";
 
 export type OrderStatus = "PENDING" | "CONFIRMED" | "PICKING" | "OUT_FOR_DELIVERY" | "COMPLETED" | "CANCELLED";
-export type PaymentTerm = "IMMEDIATE" | "TERM_10_DAYS" | "TERM_15_DAYS" | "NEGOTIATED";
+export type PaymentTerm = "IMMEDIATE" | "TERM_10_DAYS" | "TERM_15_DAYS" | "TERM_30_DAYS" | "NEGOTIATED";
 export type DeliveryMode = "DELIVERY" | "PICKUP";
 export type DiscountType = "FIXED" | "PERCENTAGE";
+export type OperationType = "SALE";
+export type Discount = { type: DiscountType; value: string };
 
 export interface OrderItem {
   id: string;
@@ -14,6 +16,11 @@ export interface OrderItem {
   quantity: number;
   catalogUnitPrice: string;
   unitPrice: string;
+  /** Desconto só deste item (R$ ou %), ou null. */
+  discount: Discount | null;
+  discountAmount: string;
+  /** Quantidade × preço, antes do desconto do item. */
+  grossTotal: string;
   lineTotal: string;
 }
 
@@ -30,11 +37,21 @@ export interface Order {
   freightAmount: string;
   discount: { type: DiscountType; value: string } | null;
   discountAmount: string;
+  /** Produtos antes de qualquer desconto. */
+  grossSubtotal: string;
+  itemDiscountsTotal: string;
+  totalDiscounts: string;
   total: string;
+  operationType: OperationType;
   paymentTerm: PaymentTerm;
   deliveryMode: DeliveryMode;
   deliveryAddress: string | null;
   deliveryResponsible: string | null;
+  driverName: string | null;
+  helperName: string | null;
+  vehicle: string | null;
+  licensePlate: string | null;
+  loadedBags: number | null;
   expectedDeliveryDate: string | null;
   actualDeliveryDate: string | null;
   deliveryNotes: string | null;
@@ -49,32 +66,87 @@ export interface Order {
 /** O que o formulário envia. Dinheiro sempre como texto no formato da API ("38.90"). */
 export interface OrderData {
   customerId: string;
-  items: { productId: string; quantity: number; unitPrice?: string }[];
+  items: { productId: string; quantity: number; unitPrice?: string; discount: Discount | null }[];
   freightAmount: string;
-  discount: { type: DiscountType; value: string } | null;
+  discount: Discount | null;
+  operationType: OperationType;
   paymentTerm: PaymentTerm;
   deliveryMode: DeliveryMode;
   deliveryAddress: string;
   deliveryResponsible: string;
+  driverName: string;
+  helperName: string;
+  vehicle: string;
+  licensePlate: string;
+  loadedBags: number | null;
   expectedDeliveryDate: string | null;
   deliveryNotes: string;
   notes: string;
 }
 
 export interface OrderPreview {
-  items: { productId: string; catalogUnitPrice: string; unitPrice: string; lineTotal: string }[];
+  items: {
+    productId: string;
+    catalogUnitPrice: string;
+    unitPrice: string;
+    grossTotal: string;
+    discountAmount: string;
+    lineTotal: string;
+  }[];
+  grossSubtotal: string;
+  itemDiscountsTotal: string;
   subtotal: string;
   freightAmount: string;
   discountAmount: string;
+  totalDiscounts: string;
   total: string;
 }
 
-export function listOrders(params: { search?: string; status?: OrderStatus | "all"; page?: number }) {
+export type OrderSortField = "number" | "createdAt" | "customer" | "total" | "status";
+
+export interface OrderListParams {
+  search?: string;
+  status?: OrderStatus | "all";
+  from?: string;
+  to?: string;
+  customerId?: string;
+  productId?: string;
+  paymentTerm?: PaymentTerm | "all";
+  sortBy?: OrderSortField;
+  sortDir?: "asc" | "desc";
+  page?: number;
+}
+
+export interface OrderTotalsGroup {
+  ordersCount: number;
+  bagsSold: number;
+  total: string;
+}
+
+/** Totais sobre TODO o filtro (não só a página): efetivas (confirmadas em diante) e pendentes separadas. */
+export interface OrderListTotals {
+  effective: OrderTotalsGroup;
+  pending: OrderTotalsGroup;
+}
+
+export interface OrderHistoryEvent {
+  action: string;
+  title: string;
+  userName: string;
+  at: string;
+  changes: { field: string; label: string; before: string | null; after: string | null }[];
+}
+
+export function listOrders(params: OrderListParams) {
   const query = new URLSearchParams();
-  if (params.search) query.set("search", params.search);
-  if (params.status) query.set("status", params.status);
-  if (params.page) query.set("page", String(params.page));
-  return apiRequest<Page & { orders: Order[] }>(`/orders?${query.toString()}`);
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== "" && value !== "all") query.set(key, String(value));
+  }
+  return apiRequest<Page & { orders: Order[]; totals: OrderListTotals }>(`/orders?${query.toString()}`);
+}
+
+export function getOrderHistory(id: string) {
+  return apiRequest<{ events: OrderHistoryEvent[] }>(`/orders/${id}/history`);
 }
 
 export function getOrder(id: string) {

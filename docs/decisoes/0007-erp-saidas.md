@@ -93,3 +93,14 @@ Migration `20261126180000_orders_c1` (incremental, só acrescenta):
 Decisões provisórias aprovadas (P-C-1..6): data da saída = data de registro, somente leitura; desconto por item nos mesmos dois tipos do geral e sem limite; sacos carregados e placa sem validação de formato (placa em maiúsculas); "rascunho" = Pendente; totalizadores pelo filtro inteiro; rota continua `/pedidos`.
 
 **Forma de pagamento** (Pix, cartão…) como filtro depende dos pagamentos (etapa D); por enquanto filtra-se pela **condição** de pagamento.
+
+## Etapa C2 — Telas de Saídas (frontend)
+
+Usa a API da C1; nenhuma regra nova de negócio. Rota continua `/pedidos` (só os textos dizem "Saída").
+
+- **Lista:** filtros por período (data de registro), cliente, produto, condição de pagamento e situação; busca por número/cliente; ordenação clicando nos títulos (número, data, cliente, valor total, situação); totalizadores do filtro inteiro, com confirmadas (Confirmado em diante) separadas das pendentes; coluna "Valor unitário" mostra "vários" quando há preços diferentes; "Editar" só aparece para Pendente; atalhos `/` (busca) e `N` (nova saída). Filtro por forma de pagamento fica para a etapa D.
+- **Formulário (blocos A–E):** informações da operação (tipo Venda, data/hora do registro somente leitura), cliente (busca + cadastro rápido em janela sobre o formulário, sem perder o que foi digitado), produtos com desconto por item (R$ ou %), entrega e logística em texto livre, pagamento (condição) e resumo calculado pelo servidor. Validação em tempo real; `Ctrl+S` salva como rascunho.
+- **Botões:** "Salvar como rascunho" (grava como Pendente); "Salvar e revisar para confirmar" só para ADM (salva e abre a revisão na tela de detalhe). Não há botão "Cancelar saída" (etapa E).
+- **Detalhe:** dados de logística, descontos por item, resumo de valores, painel de revisão completo antes de confirmar e histórico de alterações (`GET /api/orders/:id/history`).
+- **Campo de dinheiro:** `MoneyInput` trabalha com texto ("38,90"), sem `number`, e só converte para o formato da API ao enviar.
+- **Backend:** único ajuste — o pedido passou a devolver `grossSubtotal` (produtos antes de qualquer desconto), calculado com Decimal, para a tela não somar valores em ponto flutuante.
