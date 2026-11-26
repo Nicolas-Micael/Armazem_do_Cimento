@@ -17,7 +17,7 @@ function handleDuplicateDocument(error: unknown): never {
 }
 
 /**
- * Lista clientes com busca por nome ou CPF/CNPJ e paginação.
+ * Lista clientes com busca por nome, CPF/CNPJ ou telefone e paginação.
  * Retorna a página pedida e o total de resultados.
  */
 export async function listCustomers(query: ListQuery) {
@@ -28,7 +28,7 @@ export async function listCustomers(query: ListQuery) {
     ...(query.search && {
       OR: [
         { name: { contains: query.search, mode: "insensitive" } },
-        ...(digits.length >= 3 ? [{ document: { contains: digits } }] : []),
+        ...(digits.length >= 3 ? [{ document: { contains: digits } }, { phone: { contains: digits } }] : []),
       ],
     }),
   };

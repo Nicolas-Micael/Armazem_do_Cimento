@@ -4,6 +4,8 @@ import { prisma } from "../../lib/prisma.js";
 import { Decimal } from "../../lib/money.js";
 import { ConflictError, NotFoundError, ValidationError } from "../../lib/errors.js";
 import { recordAudit } from "../audit/audit.service.js";
+import { startOfBusinessDay, startOfNextBusinessDay } from "../../lib/businessDate.js";
+import { EFFECTIVE_STATUSES } from "../dashboard/dashboard.service.js";
 import { calculateOrderTotals } from "./orders.calculations.js";
 import { orderAuditSnapshot, orderInclude, toPublicOrder } from "./orders.mapper.js";
 import type { ConfirmOrderInput, CreateOrderInput, OrderListQuery, PreviewOrderInput, UpdateOrderInput } from "./orders.schemas.js";
@@ -52,6 +54,7 @@ function buildItemsAndTotals(input: PreviewOrderInput, products: Map<string, Pro
       quantity: item.quantity,
       catalogUnitPrice: product.currentPrice,
       unitPrice: item.unitPrice !== undefined ? new Decimal(item.unitPrice) : new Decimal(product.currentPrice.toString()),
+      discount: item.discount ? { type: item.discount.type, value: new Decimal(item.discount.value) } : null,
     };
   });
 
@@ -73,10 +76,16 @@ function orderData(input: CreateOrderInput, totals: ReturnType<typeof buildItems
     discountValue: input.discount?.value ?? null,
     discountAmount: totals.discountAmount.toFixed(2),
     total: totals.total.toFixed(2),
+    operationType: input.operationType,
     paymentTerm: input.paymentTerm,
     deliveryMode: input.deliveryMode,
     deliveryAddress: input.deliveryAddress ?? null,
     deliveryResponsible: input.deliveryResponsible ?? null,
+    driverName: input.driverName ?? null,
+    helperName: input.helperName ?? null,
+    vehicle: input.vehicle ?? null,
+    licensePlate: input.licensePlate ?? null,
+    loadedBags: input.loadedBags ?? null,
     expectedDeliveryDate: toDate(input.expectedDeliveryDate),
     deliveryNotes: input.deliveryNotes ?? null,
     notes: input.notes ?? null,
@@ -92,6 +101,9 @@ function itemRows(built: ReturnType<typeof buildItemsAndTotals>) {
     quantity: item.quantity,
     catalogUnitPrice: item.catalogUnitPrice.toFixed(2),
     unitPrice: item.unitPrice.toFixed(2),
+    discountType: item.discount?.type ?? null,
+    discountValue: item.discount ? item.discount.value.toFixed(2) : null,
+    discountAmount: built.totals.lineDiscounts[index]!.toFixed(2),
     lineTotal: built.totals.lineTotals[index]!.toFixed(2),
   }));
 }
@@ -118,11 +130,16 @@ export async function previewOrder(input: PreviewOrderInput) {
       productId: item.product.id,
       catalogUnitPrice: item.catalogUnitPrice.toFixed(2),
       unitPrice: item.unitPrice.toFixed(2),
+      grossTotal: totals.lineGrossTotals[index]!.toFixed(2),
+      discountAmount: totals.lineDiscounts[index]!.toFixed(2),
       lineTotal: totals.lineTotals[index]!.toFixed(2),
     })),
+    grossSubtotal: totals.grossSubtotal.toFixed(2),
+    itemDiscountsTotal: totals.itemDiscountsTotal.toFixed(2),
     subtotal: totals.subtotal.toFixed(2),
     freightAmount: totals.freightAmount.toFixed(2),
     discountAmount: totals.discountAmount.toFixed(2),
+    totalDiscounts: totals.totalDiscounts.toFixed(2),
     total: totals.total.toFixed(2),
   };
 }
@@ -234,10 +251,50 @@ export async function getOrder(id: string) {
  * Lista pedidos, do mais recente para o mais antigo.
  * A busca aceita o número ("123" ou "PED-000123") ou parte do nome do cliente.
  */
+/** Ordenação permitida na lista (lista fixa: nunca montamos "orderBy" com texto vindo da URL). */
+function listOrderBy(query: OrderListQuery): Prisma.OrderOrderByWithRelationInput[] {
+  const field: Record<OrderListQuery["sortBy"], Prisma.OrderOrderByWithRelationInput> = {
+    number: { number: query.sortDir },
+    createdAt: { createdAt: query.sortDir },
+    customer: { customerNameSnapshot: query.sortDir },
+    total: { total: query.sortDir },
+    status: { status: query.sortDir },
+  };
+  // Desempate pelo número, para a ordem não "pular" entre páginas.
+  return query.sortBy === "number" ? [field.number] : [field[query.sortBy], { number: "desc" }];
+}
+
+/** Soma de um conjunto de saídas: quantidade, sacos e valor (calculado no banco, sobre o filtro inteiro). */
+async function summarize(where: Prisma.OrderWhereInput) {
+  const [orders, items] = await Promise.all([
+    prisma.order.aggregate({ where, _count: true, _sum: { total: true } }),
+    prisma.orderItem.aggregate({ where: { order: where }, _sum: { quantity: true } }),
+  ]);
+  return {
+    ordersCount: orders._count,
+    bagsSold: items._sum.quantity ?? 0,
+    total: new Decimal(orders._sum.total?.toString() ?? "0").toFixed(2),
+  };
+}
+
+/**
+ * Lista saídas com filtros, ordenação e paginação. Os totalizadores valem para o
+ * filtro INTEIRO (não só para a página atual) e separam as saídas efetivadas das pendentes;
+ * canceladas não entram em nenhum dos dois grupos.
+ */
 export async function listOrders(query: OrderListQuery) {
   const numberMatch = /^(?:ped-?)?0*(\d{1,9})$/i.exec(query.search);
   const where: Prisma.OrderWhereInput = {
     ...(query.status !== "all" && { status: query.status }),
+    ...(query.paymentTerm !== "all" && { paymentTerm: query.paymentTerm }),
+    ...(query.customerId && { customerId: query.customerId }),
+    ...(query.productId && { items: { some: { productId: query.productId } } }),
+    ...((query.from || query.to) && {
+      createdAt: {
+        ...(query.from && { gte: startOfBusinessDay(query.from) }),
+        ...(query.to && { lt: startOfNextBusinessDay(query.to) }),
+      },
+    }),
     ...(query.search && {
       OR: [
         { customerNameSnapshot: { contains: query.search, mode: "insensitive" } },
@@ -246,18 +303,26 @@ export async function listOrders(query: OrderListQuery) {
     }),
   };
 
-  const [orders, total] = await prisma.$transaction([
+  const [orders, total, effective, pending] = await Promise.all([
     prisma.order.findMany({
       where,
-      orderBy: { number: "desc" },
+      orderBy: listOrderBy(query),
       skip: (query.page - 1) * query.pageSize,
       take: query.pageSize,
       include: orderInclude,
     }),
     prisma.order.count({ where }),
+    summarize({ AND: [where, { status: { in: [...EFFECTIVE_STATUSES] } }] }),
+    summarize({ AND: [where, { status: "PENDING" }] }),
   ]);
 
-  return { orders: orders.map(toPublicOrder), total, page: query.page, pageSize: query.pageSize };
+  return {
+    orders: orders.map(toPublicOrder),
+    total,
+    page: query.page,
+    pageSize: query.pageSize,
+    totals: { effective, pending },
+  };
 }
 
 /**

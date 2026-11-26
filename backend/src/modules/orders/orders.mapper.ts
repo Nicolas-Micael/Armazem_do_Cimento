@@ -1,6 +1,7 @@
 // Converte o pedido do banco no formato enviado pela API.
 // Dinheiro sai como texto ("38.90") e datas de calendário como "AAAA-MM-DD".
 import type { Prisma } from "../../generated/prisma/client.js";
+import { Decimal } from "../../lib/money.js";
 
 /** O que buscamos no banco para montar um pedido completo. */
 export const orderInclude = {
@@ -37,17 +38,29 @@ export function toPublicOrder(order: OrderWithRelations) {
       quantity: item.quantity,
       catalogUnitPrice: item.catalogUnitPrice.toFixed(2),
       unitPrice: item.unitPrice.toFixed(2),
+      discount: item.discountType ? { type: item.discountType, value: item.discountValue!.toFixed(2) } : null,
+      discountAmount: item.discountAmount.toFixed(2),
+      // Valor do item antes do desconto do item (quantidade × preço cobrado).
+      grossTotal: item.lineTotal.plus(item.discountAmount).toFixed(2),
       lineTotal: item.lineTotal.toFixed(2),
     })),
     subtotal: order.subtotal.toFixed(2),
     freightAmount: order.freightAmount.toFixed(2),
     discount: order.discountType ? { type: order.discountType, value: order.discountValue!.toFixed(2) } : null,
     discountAmount: order.discountAmount.toFixed(2),
+    itemDiscountsTotal: order.items.reduce((sum, item) => sum.plus(item.discountAmount), new Decimal(0)).toFixed(2),
+    totalDiscounts: order.items.reduce((sum, item) => sum.plus(item.discountAmount), order.discountAmount).toFixed(2),
     total: order.total.toFixed(2),
+    operationType: order.operationType,
     paymentTerm: order.paymentTerm,
     deliveryMode: order.deliveryMode,
     deliveryAddress: order.deliveryAddress,
     deliveryResponsible: order.deliveryResponsible,
+    driverName: order.driverName,
+    helperName: order.helperName,
+    vehicle: order.vehicle,
+    licensePlate: order.licensePlate,
+    loadedBags: order.loadedBags,
     expectedDeliveryDate: dateOnly(order.expectedDeliveryDate),
     actualDeliveryDate: dateOnly(order.actualDeliveryDate),
     deliveryNotes: order.deliveryNotes,

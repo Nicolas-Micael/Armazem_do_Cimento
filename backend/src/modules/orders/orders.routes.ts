@@ -15,6 +15,8 @@ ordersRouter.get("/", controller.list);
 // "/preview" vem antes de "/:id" para não ser confundido com um id.
 ordersRouter.post("/preview", validateBody(previewOrderSchema), controller.preview);
 ordersRouter.get("/:id", controller.get);
+// Histórico de alterações (quem mudou o quê e quando), a partir da auditoria.
+ordersRouter.get("/:id/history", controller.history);
 ordersRouter.post("/", validateBody(createOrderSchema), controller.create);
 ordersRouter.put("/:id", validateBody(updateOrderSchema), controller.update);
 // Só o ADM confirma uma saída (decisão do Nicolas, 26/11/2026). O Financeiro apenas consulta.

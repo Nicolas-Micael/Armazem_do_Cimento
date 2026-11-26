@@ -68,3 +68,28 @@ Integridade (nada financeiro muda sem registro):
 - Mudança, histórico e auditoria são gravados na mesma transação.
 
 Ainda não implementado (etapa E): Em separação, Saiu para entrega, Concluído e Cancelado (com motivo). Quem pode alterar um pedido já confirmado continua em aberto (P-PED-6/7).
+
+## Etapa C1 — Backend da tela de Saídas (escopo aprovado em 26/11/2026)
+
+Migration `20261126180000_orders_c1` (incremental, só acrescenta):
+- `PaymentTerm`: novo valor `TERM_30_DAYS` (30 dias).
+- `OrderOperationType` (só `SALE` = Venda) e `orders.operation_type`. Novos tipos = novos valores do enum, sem refazer o módulo.
+- `order_items`: `discount_type`, `discount_value`, `discount_amount` (padrão 0). CHECK: `discount_amount` entre 0 e quantidade × preço; `line_total = quantidade × preço − desconto`. Pedidos antigos têm desconto 0 e já cumprem.
+- `orders`: `driver_name`, `helper_name`, `vehicle`, `license_plate`, `loaded_bags` (CHECK ≥ 0), na própria tabela (extrair para uma tabela de logística só quando houver o módulo de logística). "Responsável pelo transporte" continua sendo `delivery_responsible`.
+
+**Regra de desconto (sem duplicidade)** — `orders.calculations.ts`:
+1. bruto do item = quantidade × preço cobrado;
+2. desconto do item (R$ ou %) incide só sobre o bruto desse item; líquido = bruto − desconto;
+3. produtos = soma dos líquidos;
+4. desconto geral: % sobre os produtos já com os descontos dos itens (nunca sobre o frete); fixo em R$ até produtos + frete (regra que já existia);
+5. total = produtos + frete − desconto geral. Verificado nos testes: bruto + frete − (descontos dos itens + geral) = total.
+
+**Lista** `GET /api/orders`: filtros `from`, `to` (data de registro, dias inteiros de Brasília), `customerId`, `productId`, `paymentTerm` (condição), `status`, `search`; ordenação `sortBy` (número, data, cliente, total, situação) e `sortDir` (lista fixa, nunca texto livre no banco); resposta traz `totals.effective` e `totals.pending` (saídas, sacos e valor do **filtro inteiro**, não só da página). Canceladas não entram em nenhum dos dois grupos.
+
+**Histórico de alterações** `GET /api/orders/:id/history`: eventos da auditoria (registrada, editada, confirmada) com quem, quando e só o que mudou, em texto pt-BR.
+
+**Busca de cliente** também por telefone.
+
+Decisões provisórias aprovadas (P-C-1..6): data da saída = data de registro, somente leitura; desconto por item nos mesmos dois tipos do geral e sem limite; sacos carregados e placa sem validação de formato (placa em maiúsculas); "rascunho" = Pendente; totalizadores pelo filtro inteiro; rota continua `/pedidos`.
+
+**Forma de pagamento** (Pix, cartão…) como filtro depende dos pagamentos (etapa D); por enquanto filtra-se pela **condição** de pagamento.
