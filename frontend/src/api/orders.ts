@@ -139,6 +139,7 @@ export interface OrderHistoryEvent {
   title: string;
   userName: string;
   at: string;
+  reason: string | null;
   changes: { field: string; label: string; before: string | null; after: string | null }[];
 }
 
@@ -174,4 +175,22 @@ export function updateOrder(id: string, data: OrderData & { version: number }) {
 /** Confirma a saída (só ADM). Envia a versão que a pessoa estava vendo. */
 export function confirmOrder(id: string, data: { version: number; note?: string }) {
   return apiRequest<{ order: Order }>(`/orders/${id}/confirm`, jsonBody("POST", data));
+}
+
+/** Avança a situação (ADM e Financeiro). `deliveredAt` só vale ao concluir. */
+export function advanceOrder(
+  id: string,
+  data: { version: number; to: "PICKING" | "OUT_FOR_DELIVERY" | "COMPLETED"; deliveredAt?: string; note?: string },
+) {
+  return apiRequest<{ order: Order }>(`/orders/${id}/advance`, jsonBody("POST", data));
+}
+
+/** Retorna um passo (só ADM), com motivo. */
+export function revertOrder(id: string, data: { version: number; reason: string }) {
+  return apiRequest<{ order: Order }>(`/orders/${id}/revert`, jsonBody("POST", data));
+}
+
+/** Cancela a saída (só ADM), com motivo. */
+export function cancelOrder(id: string, data: { version: number; reason: string }) {
+  return apiRequest<{ order: Order }>(`/orders/${id}/cancel`, jsonBody("POST", data));
 }

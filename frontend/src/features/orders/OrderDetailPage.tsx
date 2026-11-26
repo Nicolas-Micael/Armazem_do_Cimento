@@ -9,6 +9,7 @@ import { FormErrors } from "../../components/FormErrors";
 import { formatInteger } from "../../lib/format";
 import { useAuth } from "../auth/AuthContext";
 import { PaymentsSection } from "../payments/PaymentsSection";
+import { OrderStatusActions } from "./OrderStatusActions";
 import { StatusBadge } from "./StatusBadge";
 
 export function OrderDetailPage() {
@@ -105,6 +106,19 @@ export function OrderDetailPage() {
         <p className="alert alert-notice">Esta saída está pendente e aguarda confirmação do ADM. Enquanto isso, ela pode ser editada e não entra nos indicadores.</p>
       )}
 
+      <OrderStatusActions
+        key={`actions-${order.status}-${order.version}`}
+        order={order}
+        isAdmin={user?.role === "ADMIN"}
+        canAdvance={user?.role === "ADMIN" || user?.role === "FINANCEIRO"}
+        onReload={() => void reloadOrder()}
+        onChanged={(updated, message) => {
+          setOrder(updated);
+          setNotice(message);
+          getOrderHistory(updated.id).then(({ events }) => setHistory(events)).catch(() => undefined);
+        }}
+      />
+
       {confirming && canConfirm && (
         <section className="card confirm-panel" role="alertdialog" aria-labelledby="confirm-title">
           <h2 id="confirm-title">Confirmar a saída {order.code}?</h2>
@@ -186,6 +200,7 @@ export function OrderDetailPage() {
           <p>
             {DELIVERY_MODE_LABELS[order.deliveryMode]}
             {order.expectedDeliveryDate && ` · previsão ${formatDate(order.expectedDeliveryDate)}`}
+            {order.actualDeliveryDate && ` · ${order.deliveryMode === "PICKUP" ? "retirado" : "entregue"} em ${formatDate(order.actualDeliveryDate)}`}
           </p>
         </div>
         {order.deliveryAddress && (
@@ -295,6 +310,7 @@ export function OrderDetailPage() {
             {history.map((event) => (
               <li key={event.at + event.action + event.title}>
                 <strong>{event.title}</strong> · {formatDateTime(event.at)} · {event.userName}
+                {event.reason && <div className="small">Motivo: {event.reason}</div>}
                 {event.changes.length > 0 && (
                   <ul>
                     {event.changes.map((change) => (
