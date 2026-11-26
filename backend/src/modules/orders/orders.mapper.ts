@@ -49,6 +49,8 @@ export function toPublicOrder(order: OrderWithRelations) {
     discount: order.discountType ? { type: order.discountType, value: order.discountValue!.toFixed(2) } : null,
     discountAmount: order.discountAmount.toFixed(2),
     itemDiscountsTotal: order.items.reduce((sum, item) => sum.plus(item.discountAmount), new Decimal(0)).toFixed(2),
+    // Produtos antes de qualquer desconto (quantidade × preço de todos os itens).
+    grossSubtotal: order.items.reduce((sum, item) => sum.plus(item.lineTotal).plus(item.discountAmount), new Decimal(0)).toFixed(2),
     totalDiscounts: order.items.reduce((sum, item) => sum.plus(item.discountAmount), order.discountAmount).toFixed(2),
     total: order.total.toFixed(2),
     operationType: order.operationType,

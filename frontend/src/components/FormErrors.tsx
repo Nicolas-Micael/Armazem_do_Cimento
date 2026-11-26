@@ -33,13 +33,19 @@ const FIELD_LABELS: Record<string, string> = {
   deliveryResponsible: "Responsável pela entrega",
   expectedDeliveryDate: "Data prevista",
   deliveryNotes: "Observações da entrega",
+  driverName: "Motorista",
+  helperName: "Ajudante",
+  vehicle: "Veículo",
+  licensePlate: "Placa",
+  loadedBags: "Sacos carregados",
+  operationType: "Tipo de operação",
 };
 
 /** "items.0.quantity" → "Item 1 — quantidade". */
 function itemLabel(field: string): string | null {
-  const match = /^items\.(\d+)\.(\w+)$/.exec(field);
+  const match = /^items\.(\d+)\.(\w+)(?:\.value)?$/.exec(field);
   if (!match) return null;
-  const names: Record<string, string> = { productId: "produto", quantity: "quantidade", unitPrice: "preço" };
+  const names: Record<string, string> = { productId: "produto", quantity: "quantidade", unitPrice: "preço", discount: "desconto" };
   return `Item ${Number(match[1]) + 1} — ${names[match[2] ?? ""] ?? match[2]}`;
 }
 

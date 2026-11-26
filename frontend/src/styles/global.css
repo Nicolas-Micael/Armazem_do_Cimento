@@ -219,3 +219,34 @@ a.button-primary, a.button-secondary { display: inline-block; text-decoration: n
 /* ---- Confirmação de saída ---- */
 .confirm-panel { border-color: var(--color-primary); display: grid; gap: 8px; }
 .confirm-panel p { margin: 0; }
+
+/* ---- Saídas (etapa C2) ---- */
+.filters { padding-bottom: 12px; }
+.filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px 12px; margin-bottom: 10px; }
+.filters-grid label { display: grid; gap: 4px; font-size: 0.85rem; font-weight: 600; }
+.filter-search { grid-column: span 2; }
+.sort-button { background: none; border: none; padding: 0; font: inherit; font-weight: 700; color: inherit; cursor: pointer; white-space: nowrap; }
+.sort-button:hover { color: var(--color-primary); }
+.orders-table td, .orders-table th { white-space: nowrap; }
+.orders-table td:nth-child(3), .orders-table td:nth-child(4) { white-space: normal; min-width: 140px; }
+.row-actions { display: flex; gap: 12px; }
+.kpi-pending .kpi-value { color: var(--color-muted); }
+.money-input { display: inline-flex; align-items: center; gap: 6px; }
+.money-input .money-prefix { color: var(--color-muted); font-size: 0.85rem; min-width: 1.4em; }
+.discount-field { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.field { display: grid; gap: 4px; }
+.field-label { font-weight: 600; }
+.field-error { color: var(--color-danger); font-size: 0.8rem; margin: 2px 0 0; }
+.alert-error { background: #fdecea; border: 1px solid var(--color-danger); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; }
+.alert-error ul { margin: 6px 0 0; padding-left: 20px; }
+.sticky-actions { position: sticky; bottom: 0; background: var(--color-surface); border-top: 1px solid var(--color-border); padding: 12px 0; align-items: center; z-index: 5; }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(15, 42, 74, 0.5); display: flex; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 24px 12px; z-index: 50; }
+.modal { width: 100%; max-width: 760px; }
+.review-list { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0 0 12px; }
+.review-list dd { margin: 0; }
+.history-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.history-list ul { margin: 4px 0 0; padding-left: 18px; }
+@media (max-width: 700px) {
+  .filter-search { grid-column: auto; }
+  .review-list { grid-template-columns: 1fr; }
+}

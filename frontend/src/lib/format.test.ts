@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  completeMoneyInput,
+  sanitizeMoneyInput,
   formatDate,
   formatInteger,
   formatVariation,
@@ -77,5 +79,20 @@ describe("formatInteger e formatVariation", () => {
     expect(formatVariation("12.5")).toBe("+12,5%");
     expect(formatVariation("-3.0")).toBe("−3,0%");
     expect(formatVariation("0.0")).toBe("0,0%");
+  });
+});
+
+describe("campos de dinheiro", () => {
+  it("sanitizeMoneyInput mantém só números, uma vírgula e 2 casas", () => {
+    expect(sanitizeMoneyInput("R$ 1a2,345")).toBe("12,34");
+    expect(sanitizeMoneyInput("38.9")).toBe("38,9");
+    expect(sanitizeMoneyInput("1,2,3")).toBe("1,23");
+    expect(sanitizeMoneyInput("")).toBe("");
+  });
+  it("completeMoneyInput completa as casas decimais", () => {
+    expect(completeMoneyInput("38")).toBe("38,00");
+    expect(completeMoneyInput("38,9")).toBe("38,90");
+    expect(completeMoneyInput(",5")).toBe("0,50");
+    expect(completeMoneyInput("")).toBe("");
   });
 });

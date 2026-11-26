@@ -1,10 +1,10 @@
 // Detalhe de um pedido: dados, itens, valores, entrega e histórico de status.
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useParams, useSearchParams } from "react-router";
 import { ApiError } from "../../api/client";
-import { confirmOrder, getOrder, type Order } from "../../api/orders";
+import { confirmOrder, getOrder, getOrderHistory, type Order, type OrderHistoryEvent } from "../../api/orders";
 import { formatDate, formatDateTime, formatDocument, formatMoney } from "../../lib/format";
-import { DELIVERY_MODE_LABELS, ORDER_STATUS_LABELS, PAYMENT_TERM_LABELS } from "../../lib/labels";
+import { DELIVERY_MODE_LABELS, OPERATION_TYPE_LABELS, PAYMENT_TERM_LABELS } from "../../lib/labels";
 import { FormErrors } from "../../components/FormErrors";
 import { formatInteger } from "../../lib/format";
 import { useAuth } from "../auth/AuthContext";
@@ -13,6 +13,9 @@ import { StatusBadge } from "./StatusBadge";
 export function OrderDetailPage() {
   const { id } = useParams();
   const [order, setOrder] = useState<Order | null>(null);
+  const [history, setHistory] = useState<OrderHistoryEvent[] | null>(null);
+  // "?revisar=1" (vindo de "Salvar e revisar para confirmar") já abre o painel de revisão.
+  const [params] = useSearchParams();
   const [error, setError] = useState<unknown>(null);
   const { user } = useAuth();
   // Só o ADM confirma (o backend também bloqueia os outros perfis).
@@ -26,8 +29,15 @@ export function OrderDetailPage() {
   useEffect(() => {
     if (!id) return;
     getOrder(id)
-      .then(({ order }) => setOrder(order))
+      .then(({ order }) => {
+        setOrder(order);
+        if (params.get("revisar") === "1" && order.status === "PENDING") setConfirming(true);
+      })
       .catch(setError);
+    getOrderHistory(id)
+      .then(({ events }) => setHistory(events))
+      .catch(() => setHistory([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   async function handleConfirm() {
@@ -37,6 +47,7 @@ export function OrderDetailPage() {
     try {
       const { order: confirmed } = await confirmOrder(order.id, { version: order.version, note: note.trim() || undefined });
       setOrder(confirmed);
+      getOrderHistory(confirmed.id).then(({ events }) => setHistory(events)).catch(() => undefined);
       setConfirming(false);
       setNote("");
       setNotice(`Saída ${confirmed.code} confirmada. Ela já aparece nos indicadores do painel.`);
@@ -62,13 +73,14 @@ export function OrderDetailPage() {
   if (!order) return <p className="page-message">Carregando pedido…</p>;
 
   const discountLabel =
-    order.discount?.type === "PERCENTAGE" ? `Desconto (${order.discount.value.replace(".", ",")}% sobre os produtos)` : "Desconto";
+    order.discount?.type === "PERCENTAGE" ? `Desconto geral (${order.discount.value.replace(".", ",")}%)` : "Desconto geral";
+  const totalBags = order.items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <>
       <div className="page-title">
         <h1>
-          Pedido {order.code} <StatusBadge status={order.status} />
+          Saída {order.code} <StatusBadge status={order.status} />
         </h1>
         <div className="form-actions">
           {order.status === "PENDING" && canConfirm && !confirming && (
@@ -95,10 +107,32 @@ export function OrderDetailPage() {
       {confirming && canConfirm && (
         <section className="card confirm-panel" role="alertdialog" aria-labelledby="confirm-title">
           <h2 id="confirm-title">Confirmar a saída {order.code}?</h2>
-          <p>
-            Cliente <strong>{order.customerName}</strong> · {formatInteger(order.items.reduce((sum, item) => sum + item.quantity, 0))} sacos ·
-            total <strong>{formatMoney(order.total)}</strong>
-          </p>
+          <p>Confira os dados abaixo antes de confirmar.</p>
+          <dl className="review-list">
+            <dt>Cliente</dt>
+            <dd>{order.customerName}</dd>
+            <dt>Produtos</dt>
+            <dd>
+              {order.items.map((item) => `${item.productName} (${formatInteger(item.quantity)} × ${formatMoney(item.unitPrice)})`).join("; ")}
+            </dd>
+            <dt>Sacos</dt>
+            <dd>{formatInteger(totalBags)}</dd>
+            <dt>Descontos</dt>
+            <dd>− {formatMoney(order.totalDiscounts)}</dd>
+            <dt>Frete</dt>
+            <dd>{formatMoney(order.freightAmount)}</dd>
+            <dt>Pagamento</dt>
+            <dd>{PAYMENT_TERM_LABELS[order.paymentTerm]}</dd>
+            <dt>Entrega</dt>
+            <dd>
+              {DELIVERY_MODE_LABELS[order.deliveryMode]}
+              {order.deliveryAddress ? ` · ${order.deliveryAddress}` : ""}
+            </dd>
+            <dt>Total</dt>
+            <dd>
+              <strong>{formatMoney(order.total)}</strong>
+            </dd>
+          </dl>
           <p className="muted small">
             Depois de confirmada, a saída passa a contar nos indicadores e <strong>não poderá mais ser editada</strong>. A confirmação fica registrada
             com seu nome, a data e a hora.
@@ -139,6 +173,10 @@ export function OrderDetailPage() {
           </p>
         </div>
         <div>
+          <span className="muted small">Tipo de operação</span>
+          <p>{OPERATION_TYPE_LABELS[order.operationType]}</p>
+        </div>
+        <div>
           <span className="muted small">Condição de pagamento</span>
           <p>{PAYMENT_TERM_LABELS[order.paymentTerm]}</p>
         </div>
@@ -155,11 +193,22 @@ export function OrderDetailPage() {
             <p>{order.deliveryAddress}</p>
           </div>
         )}
-        {order.deliveryResponsible && (
-          <div>
-            <span className="muted small">Responsável pela entrega</span>
-            <p>{order.deliveryResponsible}</p>
-          </div>
+        {(
+          [
+            ["Responsável pelo transporte", order.deliveryResponsible],
+            ["Motorista", order.driverName],
+            ["Ajudante", order.helperName],
+            ["Veículo", order.vehicle],
+            ["Placa", order.licensePlate],
+            ["Sacos carregados", order.loadedBags === null ? null : formatInteger(order.loadedBags)],
+          ] as const
+        ).map(([label, value]) =>
+          value ? (
+            <div key={label}>
+              <span className="muted small">{label}</span>
+              <p>{value}</p>
+            </div>
+          ) : null,
         )}
         {order.deliveryNotes && (
           <div>
@@ -182,6 +231,7 @@ export function OrderDetailPage() {
               <th>Produto</th>
               <th className="numeric">Qtd.</th>
               <th className="numeric">Preço unit.</th>
+              <th className="numeric">Desconto</th>
               <th className="numeric">Total</th>
             </tr>
           </thead>
@@ -199,6 +249,18 @@ export function OrderDetailPage() {
                     <div className="muted small">Tabela: {formatMoney(item.catalogUnitPrice)}</div>
                   )}
                 </td>
+                <td className="numeric">
+                  {item.discount ? (
+                    <>
+                      − {formatMoney(item.discountAmount)}
+                      <div className="muted small">
+                        {item.discount.type === "PERCENTAGE" ? `${item.discount.value.replace(".", ",")}%` : "valor fixo"}
+                      </div>
+                    </>
+                  ) : (
+                    "—"
+                  )}
+                </td>
                 <td className="numeric">{formatMoney(item.lineTotal)}</td>
               </tr>
             ))}
@@ -208,28 +270,41 @@ export function OrderDetailPage() {
 
       <section className="card totals">
         <dl>
-          <dt>Produtos</dt>
-          <dd>{formatMoney(order.subtotal)}</dd>
+          <dt>Produtos (sem descontos)</dt>
+          <dd>{formatMoney(order.grossSubtotal)}</dd>
+          <dt>Descontos dos itens</dt>
+          <dd>− {formatMoney(order.itemDiscountsTotal)}</dd>
           <dt>Frete</dt>
           <dd>{formatMoney(order.freightAmount)}</dd>
           <dt>{discountLabel}</dt>
           <dd>− {formatMoney(order.discountAmount)}</dd>
-          <dt className="total">Total do pedido</dt>
+          <dt className="total">Total da saída</dt>
           <dd className="total">{formatMoney(order.total)}</dd>
         </dl>
       </section>
 
       <section className="card">
-        <h2>Histórico de status</h2>
-        <ul>
-          {order.statusHistory.map((entry) => (
-            <li key={entry.changedAt + entry.toStatus}>
-              {formatDateTime(entry.changedAt)} · {entry.fromStatus ? `${ORDER_STATUS_LABELS[entry.fromStatus]} → ` : "Criado como "}
-              {ORDER_STATUS_LABELS[entry.toStatus]} · {entry.changedBy}
-              {entry.note && <span className="muted"> · {entry.note}</span>}
-            </li>
-          ))}
-        </ul>
+        <h2>Histórico de alterações</h2>
+        {!history && <p className="muted">Carregando histórico…</p>}
+        {history && history.length === 0 && <p className="muted">Nenhum registro.</p>}
+        {history && history.length > 0 && (
+          <ul className="history-list">
+            {history.map((event) => (
+              <li key={event.at + event.action + event.title}>
+                <strong>{event.title}</strong> · {formatDateTime(event.at)} · {event.userName}
+                {event.changes.length > 0 && (
+                  <ul>
+                    {event.changes.map((change) => (
+                      <li key={change.field} className="small">
+                        {change.label}: <span className="muted">{change.before ?? "—"}</span> → {change.after ?? "—"}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </>
   );
