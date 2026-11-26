@@ -38,3 +38,11 @@ Decisões de Nicolas em 26/11/2026 sobre a proposta de escopo da etapa E. A etap
 - `orders.status.api.test.ts` (30 testes): fluxo de entrega e retirada, sem pular etapa, permissões (Financeiro avança; só ADM retorna e cancela), data efetiva, motivo mínimo de 3 caracteres, cancelamento por status, cancelamento com pagamentos (Confirmado bloqueia; Pendente/A compensar exigem estorno), versão antiga (409), concorrência (avanços simultâneos, avançar × cancelar, cancelar × pagamento), indicadores, 401/404 e ausência de rota de exclusão.
 - Verificação por mutação: sem a regra do pagamento Confirmado, 3 testes falham; sem o bloqueio da saída (`lockOrder`), o teste de concorrência falha.
 - Suíte completa do backend: 263 testes passando; `tsc --noEmit` limpo.
+
+## Telas (E2)
+
+- `OrderStatusActions` na página da saída: botões de avançar (ADM e Financeiro), retornar e cancelar (só ADM), com painel de motivo obrigatório (mín. 3) e data efetiva (hoje por padrão, não futura) ao concluir. Os botões escondidos por perfil são só conveniência; o backend decide.
+- O erro do backend (ex.: cancelamento bloqueado por pagamento Confirmado) aparece na tela com a mensagem completa; versão antiga oferece "Recarregar saída".
+- O histórico mostra o motivo e a data efetiva aparece em "Entrega".
+- `lib/orderStatus.ts` espelha as regras só para escolher botões (com teste).
+- Verificado no navegador: fluxo de entrega até Concluído, cancelamento com motivo, bloqueio com pagamento Confirmado e visão do Financeiro (só avança).
