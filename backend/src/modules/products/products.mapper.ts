@@ -10,7 +10,6 @@ export function toPublicProduct(product: Product) {
     name: product.name,
     brand: product.brand,
     cementType: product.cementType,
-    bagWeightKg: product.bagWeightKg?.toString() ?? null,
     unit: product.unit,
     currentPrice: product.currentPrice.toFixed(2),
     active: product.active,

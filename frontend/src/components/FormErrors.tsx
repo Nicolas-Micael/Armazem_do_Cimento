@@ -21,7 +21,6 @@ const FIELD_LABELS: Record<string, string> = {
   notes: "Observações",
   brand: "Marca",
   cementType: "Tipo de cimento",
-  bagWeightKg: "Peso do saco",
   currentPrice: "Preço",
 };
 

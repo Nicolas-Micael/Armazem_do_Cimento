@@ -6,8 +6,6 @@ export interface ProductData {
   name: string;
   brand: string;
   cementType: string;
-  /** Texto, ex.: "50". */
-  bagWeightKg: string;
   /** Texto no formato da API, ex.: "38.90". */
   currentPrice: string;
 }

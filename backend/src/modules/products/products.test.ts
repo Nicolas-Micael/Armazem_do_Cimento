@@ -9,7 +9,7 @@ const app = createApp();
 beforeEach(resetDatabase);
 afterAll(() => prisma.$disconnect());
 
-const cpII = { name: "Cimento CP II-E-32 50kg", brand: "Marca A", cementType: "CP II-E-32", bagWeightKg: "50", currentPrice: "38.9" };
+const cpII = { name: "Cimento CP II-E-32 50kg", brand: "Marca A", cementType: "CP II-E-32", currentPrice: "38.9" };
 
 async function setup() {
   await createTestUser({ username: "chefe", role: "ADMIN" });
@@ -23,7 +23,8 @@ describe("cadastro de produtos", () => {
     const response = await admin.post("/api/products").send(cpII);
 
     expect(response.status).toBe(201);
-    expect(response.body.product).toMatchObject({ currentPrice: "38.90", bagWeightKg: "50", unit: "SACO", active: true });
+    expect(response.body.product).toMatchObject({ currentPrice: "38.90", unit: "SACO", active: true });
+    expect(response.body.product).not.toHaveProperty("bagWeightKg");
   });
 
   it("guarda o preço exato no banco (DECIMAL), sem erro de arredondamento", async () => {
@@ -63,7 +64,7 @@ describe("alteração de preço", () => {
     const { admin } = await setup();
     const { body } = await admin.post("/api/products").send(cpII);
     const response = await admin.patch(`/api/products/${body.product.id}`).send({ currentPrice: "40.00" });
-    expect(response.body.product).toMatchObject({ brand: "Marca A", bagWeightKg: "50", currentPrice: "40.00" });
+    expect(response.body.product).toMatchObject({ brand: "Marca A", cementType: "CP II-E-32", currentPrice: "40.00" });
   });
 
   it("produto desativado sai da lista padrão, mas continua consultável", async () => {

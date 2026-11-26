@@ -15,7 +15,6 @@ export function ProductForm({ product, onSaved, onCancel }: Props) {
   const [name, setName] = useState(product?.name ?? "");
   const [brand, setBrand] = useState(product?.brand ?? "");
   const [cementType, setCementType] = useState(product?.cementType ?? "");
-  const [bagWeightKg, setBagWeightKg] = useState(product?.bagWeightKg?.replace(".", ",") ?? "");
   // O preço é digitado no padrão brasileiro ("38,90") e convertido no envio.
   const [price, setPrice] = useState(product ? moneyApiToInput(product.currentPrice) : "");
   const [error, setError] = useState<unknown>(null);
@@ -29,7 +28,6 @@ export function ProductForm({ product, onSaved, onCancel }: Props) {
       name,
       brand,
       cementType,
-      bagWeightKg: bagWeightKg.trim().replace(",", "."),
       currentPrice: moneyInputToApi(price),
     };
     try {
@@ -47,7 +45,7 @@ export function ProductForm({ product, onSaved, onCancel }: Props) {
       <h2>{product ? `Editar ${product.name}` : "Novo produto"}</h2>
       {product && (
         <p className="muted small span-2">
-          Alterar o preço vale só para pedidos novos. Pedidos já registrados mantêm o preço da época.
+          Este é o preço de tabela (sugerido). Alterá-lo vale só para pedidos novos; pedidos já registrados mantêm o preço da época.
         </p>
       )}
       <FormErrors error={error} />
@@ -65,11 +63,7 @@ export function ProductForm({ product, onSaved, onCancel }: Props) {
         <input value={cementType} onChange={(e) => setCementType(e.target.value)} placeholder="ex.: CP II-E-32" />
       </label>
       <label>
-        Peso do saco (kg)
-        <input value={bagWeightKg} onChange={(e) => setBagWeightKg(e.target.value)} inputMode="decimal" placeholder="50" />
-      </label>
-      <label>
-        Preço por saco (R$)
+        Preço de tabela por saco (R$)
         <input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" placeholder="38,90" required />
       </label>
 

@@ -11,7 +11,7 @@ Sistema interno de controle de pedidos, clientes, pagamentos e recebimentos.
 - **Etapa 1 (esqueleto):** concluída. API, banco e tela de verificação.
 - **Etapa 2 (login e permissões):** login por nome de usuário, senha temporária com troca obrigatória, perfis ADM e Financeiro, gestão de usuários pelo ADM e auditoria. Detalhes em [`docs/decisoes/0004-autenticacao.md`](docs/decisoes/0004-autenticacao.md).
 
-- **Etapa 4 (clientes e produtos):** cadastro, busca, desativação, validação de CPF/CNPJ, preço em decimal e histórico de preços. Algumas regras são provisórias: ver [`docs/decisoes/0005-clientes-produtos.md`](docs/decisoes/0005-clientes-produtos.md).
+- **Etapa 4 (clientes e produtos):** cadastro, busca, desativação, validação de CPF/CNPJ, preço em decimal e histórico de preços. Regras em [`docs/decisoes/0005-clientes-produtos.md`](docs/decisoes/0005-clientes-produtos.md).
 
 Ainda não há pedidos nem pagamentos.
 

@@ -1,8 +1,7 @@
 // Rotas de clientes: /api/customers
 //
-// Permissões (decisão provisória, pergunta P-CLI-1):
-// - consultar: ADM e Financeiro;
-// - cadastrar e editar (inclusive desativar): só ADM.
+// Permissões (decisão de Nicolas, 26/11/2026 — pergunta P-CLI-1):
+// - consultar, cadastrar e editar (inclusive desativar): ADM e Financeiro.
 import { Router } from "express";
 import { requireAuth } from "../../middlewares/authenticate.js";
 import { authorize } from "../../middlewares/authorize.js";
@@ -10,8 +9,8 @@ import { validateBody } from "../../middlewares/validate.js";
 import * as controller from "./customers.controller.js";
 import { createCustomerSchema, updateCustomerSchema } from "./customers.schemas.js";
 
-/** Perfis que podem cadastrar e editar clientes. Ajustar aqui se P-CLI-1 mudar. */
-const CAN_MANAGE_CUSTOMERS = ["ADMIN"] as const;
+/** Perfis que podem cadastrar e editar clientes. */
+const CAN_MANAGE_CUSTOMERS = ["ADMIN", "FINANCEIRO"] as const;
 
 export const customersRouter = Router();
 

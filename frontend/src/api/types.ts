@@ -57,8 +57,6 @@ export interface Product {
   name: string;
   brand: string | null;
   cementType: string | null;
-  /** Texto decimal, ex.: "50". */
-  bagWeightKg: string | null;
   unit: string;
   /** Texto decimal com 2 casas, ex.: "38.90". */
   currentPrice: string;
