@@ -22,7 +22,7 @@ export function HomePage() {
   return (
     <>
       <h1>Olá, {user?.name}</h1>
-      <p className="muted">Os módulos de clientes, produtos e pedidos entram nas próximas etapas.</p>
+      <p className="muted">Clientes e produtos já estão disponíveis no menu. Pedidos e pagamentos entram nas próximas etapas.</p>
 
       <section className="card" aria-live="polite">
         <h2>Situação do sistema</h2>

@@ -53,14 +53,14 @@ model User {
 /// aqui guardamos só o HASH desse código, para que um vazamento do
 /// banco não permita entrar no sistema como outra pessoa.
 model Session {
-  id         String    @id @default(uuid())
-  tokenHash  String    @unique @map("token_hash")
-  userId     String    @map("user_id")
-  user       User      @relation(fields: [userId], references: [id])
-  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(3)
+  id        String    @id @default(uuid())
+  tokenHash String    @unique @map("token_hash")
+  userId    String    @map("user_id")
+  user      User      @relation(fields: [userId], references: [id])
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
   /// Preenchido no logout, na troca/redefinição de senha ou ao desativar o usuário.
-  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(3)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
 
   @@index([userId])
   @@map("sessions")
@@ -83,4 +83,56 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// =============================================================
+// Etapa 4: clientes e produtos
+// =============================================================
+
+/// Cliente da distribuidora. Nunca é apagado: é desativado.
+model Customer {
+  id         String   @id @default(uuid())
+  /// Nome ou razão social.
+  name       String
+  /// CPF (11 dígitos) ou CNPJ (14 dígitos), guardado só com números.
+  /// Opcional por enquanto (pergunta P-CLI-2); se informado, não pode repetir.
+  document   String?  @unique
+  phone      String?
+  /// Endereço único por cliente por enquanto (pergunta P-CLI-3).
+  street     String?
+  number     String?
+  complement String?
+  district   String?
+  city       String?
+  state      String?  @db.Char(2)
+  zipCode    String?  @map("zip_code")
+  notes      String?
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([name])
+  @@map("customers")
+}
+
+/// Produto vendido (ex.: cimento CP II 50 kg). Nunca é apagado: é desativado.
+model Product {
+  id           String   @id @default(uuid())
+  name         String
+  brand        String?
+  /// Tipo de cimento, ex.: "CP II-E-32", "CP V-ARI".
+  cementType   String?  @map("cement_type")
+  /// Peso do saco em quilos, ex.: 50.
+  bagWeightKg  Decimal? @map("bag_weight_kg") @db.Decimal(6, 2)
+  /// Unidade de venda. Inicialmente sempre "SACO".
+  unit         String   @default("SACO")
+  /// Preço ATUAL de tabela. Cada pedido guardará a sua própria cópia do
+  /// preço praticado, então mudar este valor não altera pedidos antigos.
+  currentPrice Decimal  @map("current_price") @db.Decimal(12, 2)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([name])
+  @@map("products")
 }

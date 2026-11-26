@@ -27,3 +27,40 @@ export function formatDateTime(isoDate: string): string {
     timeZone: "America/Sao_Paulo",
   }).format(new Date(isoDate));
 }
+
+/** "11222333000181" → "11.222.333/0001-81"; "52998224725" → "529.982.247-25". */
+export function formatDocument(digits: string | null): string {
+  if (!digits) return "";
+  if (digits.length === 11) return digits.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
+  if (digits.length === 14) return digits.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+  return digits;
+}
+
+/** "11987654321" → "(11) 98765-4321"; "1133334444" → "(11) 3333-4444". */
+export function formatPhone(digits: string | null): string {
+  if (!digits) return "";
+  if (digits.length === 11) return digits.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
+  if (digits.length === 10) return digits.replace(/^(\d{2})(\d{4})(\d{4})$/, "($1) $2-$3");
+  return digits;
+}
+
+/** "01001000" → "01001-000". */
+export function formatZipCode(digits: string | null): string {
+  if (!digits) return "";
+  return digits.length === 8 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+}
+
+/**
+ * Converte o valor digitado no padrão brasileiro para o formato da API,
+ * mexendo só no texto (sem number):
+ * "1.234,56" → "1234.56" · "38,9" → "38.9" · "40" → "40".
+ * Não valida: quem confere se o valor é aceitável é o backend.
+ */
+export function moneyInputToApi(value: string): string {
+  return value.trim().replace(/^R\$\s*/, "").replace(/\./g, "").replace(",", ".");
+}
+
+/** Converte o valor da API para exibir num campo de edição: "38.90" → "38,90". */
+export function moneyApiToInput(value: string): string {
+  return value.replace(".", ",");
+}

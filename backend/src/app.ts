@@ -10,6 +10,8 @@ import { env } from "./config/env.js";
 import { healthRouter } from "./modules/health/health.routes.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
 import { usersRouter } from "./modules/users/users.routes.js";
+import { customersRouter } from "./modules/customers/customers.routes.js";
+import { productsRouter } from "./modules/products/products.routes.js";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
 
 export function createApp() {
@@ -33,7 +35,9 @@ export function createApp() {
   app.use("/api/health", healthRouter);
   app.use("/api/auth", authRouter);
   app.use("/api/users", usersRouter);
-  // As próximas etapas adicionam aqui: /api/customers, /api/products...
+  app.use("/api/customers", customersRouter);
+  app.use("/api/products", productsRouter);
+  // As próximas etapas adicionam aqui: /api/orders, /api/payments...
 
   // ---- Tratamento de rotas inexistentes e de erros (sempre por último) ----
   app.use("/api", notFoundHandler);
