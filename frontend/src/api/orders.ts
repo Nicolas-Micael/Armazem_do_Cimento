@@ -93,3 +93,8 @@ export function createOrder(data: OrderData) {
 export function updateOrder(id: string, data: OrderData & { version: number }) {
   return apiRequest<{ order: Order }>(`/orders/${id}`, { method: "PUT", body: JSON.stringify(data) });
 }
+
+/** Confirma a saída (só ADM). Envia a versão que a pessoa estava vendo. */
+export function confirmOrder(id: string, data: { version: number; note?: string }) {
+  return apiRequest<{ order: Order }>(`/orders/${id}/confirm`, jsonBody("POST", data));
+}

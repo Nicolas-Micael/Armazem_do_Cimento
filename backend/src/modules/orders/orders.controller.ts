@@ -24,3 +24,8 @@ export async function update(req: Request<{ id: string }>, res: Response) {
   const order = await ordersService.updateOrder(req.auth!.user.id, req.params.id, req.body);
   res.json({ order });
 }
+
+export async function confirm(req: Request<{ id: string }>, res: Response) {
+  const order = await ordersService.confirmOrder(req.auth!.user.id, req.params.id, req.body);
+  res.json({ order });
+}

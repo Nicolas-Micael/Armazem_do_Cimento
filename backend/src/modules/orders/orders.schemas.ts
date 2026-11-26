@@ -77,3 +77,14 @@ export type PreviewOrderInput = z.infer<typeof previewOrderSchema>;
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 export type UpdateOrderInput = z.infer<typeof updateOrderSchema>;
 export type OrderListQuery = z.infer<typeof orderListQuerySchema>;
+
+/**
+ * Confirmar uma saída. A `version` é a que a pessoa estava vendo na tela: se o pedido
+ * foi editado depois disso, a confirmação é recusada (ninguém confirma valores que não viu).
+ */
+export const confirmOrderSchema = z.object({
+  version: z.number({ error: "Informe a versão do pedido." }).int().min(1),
+  note: optionalText(500, "Observação"),
+});
+
+export type ConfirmOrderInput = z.infer<typeof confirmOrderSchema>;

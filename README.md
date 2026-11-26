@@ -18,7 +18,9 @@ Sistema interno de controle de pedidos, clientes, pagamentos e recebimentos.
 - **Etapa A (layout ERP):** menu lateral, cabeçalho com breadcrumb e busca rápida, módulos futuros como "Em desenvolvimento". Decisões e plano em [`docs/decisoes/0007-erp-saidas.md`](docs/decisoes/0007-erp-saidas.md).
 - **Etapa B (dashboard):** indicadores reais das saídas confirmadas, com filtro de período, gráfico por dia, ranking de produtos e clientes. Definições em [`docs/decisoes/0007-erp-saidas.md`](docs/decisoes/0007-erp-saidas.md).
 
-Ainda não há mudança de status, cancelamento nem pagamentos.
+- **Confirmação de saída:** só o ADM confirma (Pendente → Confirmado), com histórico e auditoria; a saída passa a contar no painel. Ver `docs/decisoes/0007-erp-saidas.md`.
+
+Ainda não há os demais status, cancelamento nem pagamentos.
 
 ## Estrutura
 

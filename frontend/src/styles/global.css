@@ -215,3 +215,7 @@ a.button-primary, a.button-secondary { display: inline-block; text-decoration: n
 .bar-track { height: 8px; background: var(--color-bg); border-radius: 999px; margin-top: 4px; }
 .bar-fill { height: 100%; background: var(--color-primary); border-radius: 999px; }
 .table-flat { border: none; border-radius: 0; margin-bottom: 0; }
+
+/* ---- Confirmação de saída ---- */
+.confirm-panel { border-color: var(--color-primary); display: grid; gap: 8px; }
+.confirm-panel p { margin: 0; }
