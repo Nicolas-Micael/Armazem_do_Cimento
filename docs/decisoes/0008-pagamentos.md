@@ -66,9 +66,13 @@ Cobrem elegibilidade, situação inicial por meio, regras de conta, limite (incl
 - **Lista de saídas:** filtro "Forma de pagamento" e coluna "Saldo a receber" (— em Pendente e Cancelada).
 - **Painel:** bloco "Financeiro" (recebido no período, a receber hoje, em atraso, a compensar, pendentes de conferência) e recebido por forma de pagamento e por conta. Sem dados fictícios: tudo vem dos pagamentos gravados.
 
-### Definições dos indicadores (leituras provisórias)
+### Definições dos indicadores (aprovadas por Nicolas em 26/11/2026)
 
-- **P-DASH-3 — Recebido no período:** pagamentos **Confirmados** cuja confirmação (dia de Brasília) cai no período, não importa a data da venda. Cheque conta na data da compensação. Pendente, A compensar e Estornado nunca entram.
-- **P-DASH-4 — A receber:** posição de **hoje**, sem filtro de período: total das saídas confirmadas em diante − pagamentos Confirmados delas.
-- **Por conta:** usa a conta atual do pagamento (cheque compensado no Bradesco aparece no Bradesco).
+- **Recebido no período** = confirmações do período − estornos do período, cada evento na **data em que aconteceu** (dia de Brasília, lida do histórico do pagamento), qualquer que seja a data da venda.
+  - O pagamento confirmado soma na data da confirmação; cheque, na data da **compensação** (não a do recebimento do cheque).
+  - O estorno de um pagamento que estava Confirmado subtrai na data do **estorno**. Confirmar e estornar no mesmo período dá efeito líquido zero; estornar num período posterior preserva o período da confirmação e deixa o do estorno negativo.
+  - Estornar um pagamento que ainda não estava Confirmado (Pix pendente, cheque a compensar) não altera o recebido.
+  - Nada é apagado: o cálculo lê o histórico (`payment_status_history`).
+- **A receber:** posição **atual**, sem filtro de período: total das saídas Confirmadas e posteriores (sem Canceladas) − pagamentos Confirmados delas. Um estorno devolve o valor ao saldo.
+- **Por forma de pagamento e por conta:** mesmo critério líquido; a conta é a atual do pagamento (cheque compensado no Bradesco e depois devolvido subtrai no Bradesco). Linhas com líquido zero não aparecem.
 - **Em atraso:** vencimento anterior a hoje com valor em aberto, depois de abatidos os Confirmados (mais antigos primeiro).

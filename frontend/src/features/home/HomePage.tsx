@@ -131,7 +131,9 @@ export function HomePage() {
             <div className="kpi">
               <span className="kpi-label">Recebido no período</span>
               <strong className="kpi-value">{formatMoney(data.financial.received.total)}</strong>
-              <span className="muted small">{formatInteger(data.financial.received.paymentsCount)} pagamento(s) confirmado(s)</span>
+              <span className="muted small">
+                Confirmado {formatMoney(data.financial.received.confirmed)} − estornado {formatMoney(data.financial.received.reversed)}
+              </span>
             </div>
             <div className="kpi">
               <span className="kpi-label">A receber (hoje)</span>
@@ -157,14 +159,14 @@ export function HomePage() {
             </div>
           </section>
           <p className="muted small kpi-note">
-            Recebido = pagamentos Confirmados cuja confirmação caiu no período. A compensar e Pendentes não contam como recebido.
+            Recebido = confirmações do período − estornos do período, cada um na data em que aconteceu (cheque, na data da compensação). A compensar e Pendentes não contam como recebido.
           </p>
 
           <div className="dash-two">
             <section className="card">
               <h2>Recebido por forma de pagamento</h2>
               {data.financial.receivedByMethod.length === 0 ? (
-                <p className="muted">Nenhum recebimento confirmado no período.</p>
+                <p className="muted">Nenhum movimento de recebimento no período.</p>
               ) : (
                 <BarList
                   rows={data.financial.receivedByMethod.map((row) => ({
@@ -179,7 +181,7 @@ export function HomePage() {
             <section className="card">
               <h2>Recebido por conta</h2>
               {data.financial.receivedByAccount.length === 0 ? (
-                <p className="muted">Nenhum recebimento confirmado no período.</p>
+                <p className="muted">Nenhum movimento de recebimento no período.</p>
               ) : (
                 <BarList
                   rows={data.financial.receivedByAccount.map((row) => ({

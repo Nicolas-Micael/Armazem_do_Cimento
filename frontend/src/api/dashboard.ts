@@ -20,8 +20,8 @@ export type Variation = Record<keyof Totals, string | null>;
 
 /** Indicadores financeiros (definições em docs/decisoes/0008-pagamentos.md). */
 export interface FinancialIndicators {
-  /** Confirmados com confirmação dentro do período. */
-  received: { total: string; paymentsCount: number };
+  /** Líquido do período = confirmado − estornado (cada um na data do seu evento); pode ser negativo. */
+  received: { total: string; confirmed: string; reversed: string; paymentsCount: number };
   receivedByMethod: { method: PaymentMethod; total: string; paymentsCount: number }[];
   receivedByAccount: { accountId: string; accountName: string; total: string; paymentsCount: number }[];
   /** Posição de hoje (não depende do período): saídas efetivadas − Confirmados. */

@@ -1,8 +1,12 @@
 // Indicadores financeiros do painel (etapa D2), calculados dos pagamentos gravados.
 //
 // DEFINIÇÕES (leituras provisórias P-DASH-3 e P-DASH-4, ver docs/decisoes/0008-pagamentos.md):
-// - Recebido no período: pagamentos CONFIRMADOS cuja confirmação (dia de Brasília) cai no período,
-//   qualquer que seja a data da venda. Pendente, A compensar e Estornado nunca entram.
+// - Recebido no período = confirmações do período − estornos (de pagamentos que estavam Confirmados)
+//   do período, pela data de cada EVENTO no histórico (dia de Brasília), qualquer que seja a data da venda:
+//   a confirmação soma na data em que aconteceu e o estorno subtrai na data do estorno. Confirmar e
+//   estornar no mesmo período dá efeito líquido zero; estornar num período posterior deixa aquele período
+//   negativo e preserva o anterior. Estornar um pagamento que ainda não estava Confirmado não altera o recebido.
+//   Cheque conta na data da compensação. Nada é apagado: o cálculo lê o histórico dos pagamentos.
 // - A receber: posição de HOJE (não depende do filtro de período) = total das saídas efetivadas
 //   − pagamentos Confirmados dessas saídas.
 // - Em atraso: vencimentos anteriores a hoje com valor em aberto, já abatidos os Confirmados
@@ -20,21 +24,30 @@ const TZ = Prisma.raw(`'${BUSINESS_TIME_ZONE}'`);
 export async function getFinancialIndicators(period: Period) {
   const start = period.from;
   const endExclusive = addDays(period.to, 1);
-  const confirmedInPeriod = Prisma.sql`p.status = 'CONFIRMED'
-    AND p.confirmed_at >= (${start}::date)::timestamp AT TIME ZONE ${TZ}
-    AND p.confirmed_at < (${endExclusive}::date)::timestamp AT TIME ZONE ${TZ}`;
+  // Eventos do período: +1 quando o pagamento virou Confirmado, −1 quando um Confirmado foi estornado.
+  const ledger = Prisma.sql`(
+    SELECT p.id, p.method, p.account_id, p.amount,
+           CASE WHEN h.to_status = 'CONFIRMED' THEN 1 ELSE -1 END AS sign
+    FROM payment_status_history h JOIN payments p ON p.id = h.payment_id
+    WHERE (h.to_status = 'CONFIRMED' OR (h.from_status = 'CONFIRMED' AND h.to_status = 'REVERSED'))
+      AND h.changed_at >= (${start}::date)::timestamp AT TIME ZONE ${TZ}
+      AND h.changed_at < (${endExclusive}::date)::timestamp AT TIME ZONE ${TZ}
+  ) ev`;
   const effective = Prisma.sql`o.status::text IN (${Prisma.join([...EFFECTIVE_STATUSES])})`;
 
   const [receivedRow, byMethod, byAccount, ordersTotal, confirmedTotal, notReceived, dueRows, confirmedByOrder] = await Promise.all([
-    prisma.$queryRaw<{ total: string; count: number }[]>`
-      SELECT COALESCE(SUM(p.amount), 0)::text AS total, COUNT(*)::int AS count FROM payments p WHERE ${confirmedInPeriod}`,
+    prisma.$queryRaw<{ confirmed: string; reversed: string; count: number }[]>`
+      SELECT COALESCE(SUM(ev.amount) FILTER (WHERE ev.sign = 1), 0)::text AS confirmed,
+             COALESCE(SUM(ev.amount) FILTER (WHERE ev.sign = -1), 0)::text AS reversed,
+             COALESCE(SUM(ev.sign), 0)::int AS count
+      FROM ${ledger}`,
     prisma.$queryRaw<{ method: string; total: string; count: number }[]>`
-      SELECT p.method::text AS method, SUM(p.amount)::text AS total, COUNT(*)::int AS count
-      FROM payments p WHERE ${confirmedInPeriod} GROUP BY p.method ORDER BY SUM(p.amount) DESC`,
+      SELECT ev.method::text AS method, SUM(ev.amount * ev.sign)::text AS total, SUM(ev.sign)::int AS count
+      FROM ${ledger} GROUP BY ev.method HAVING SUM(ev.amount * ev.sign) <> 0 ORDER BY SUM(ev.amount * ev.sign) DESC`,
     prisma.$queryRaw<{ account_id: string; name: string; total: string; count: number }[]>`
-      SELECT a.id AS account_id, a.name, SUM(p.amount)::text AS total, COUNT(*)::int AS count
-      FROM payments p JOIN receiving_accounts a ON a.id = p.account_id
-      WHERE ${confirmedInPeriod} GROUP BY a.id, a.name ORDER BY SUM(p.amount) DESC`,
+      SELECT a.id AS account_id, a.name, SUM(ev.amount * ev.sign)::text AS total, SUM(ev.sign)::int AS count
+      FROM ${ledger} JOIN receiving_accounts a ON a.id = ev.account_id
+      GROUP BY a.id, a.name HAVING SUM(ev.amount * ev.sign) <> 0 ORDER BY SUM(ev.amount * ev.sign) DESC`,
     prisma.$queryRaw<{ total: string }[]>`SELECT COALESCE(SUM(o.total), 0)::text AS total FROM orders o WHERE ${effective}`,
     prisma.$queryRaw<{ total: string }[]>`
       SELECT COALESCE(SUM(p.amount), 0)::text AS total FROM payments p JOIN orders o ON o.id = p.order_id
@@ -73,7 +86,13 @@ export async function getFinancialIndicators(period: Period) {
 
   const notReceivedBy = (status: string) => notReceived.find((row) => row.status === status);
   return {
-    received: { total: moneyToString(new Decimal(receivedRow[0]?.total ?? "0")), paymentsCount: receivedRow[0]?.count ?? 0 },
+    // total = confirmado − estornado no período (pode ser negativo se só houve estornos).
+    received: {
+      total: moneyToString(new Decimal(receivedRow[0]?.confirmed ?? "0").minus(receivedRow[0]?.reversed ?? "0")),
+      confirmed: moneyToString(new Decimal(receivedRow[0]?.confirmed ?? "0")),
+      reversed: moneyToString(new Decimal(receivedRow[0]?.reversed ?? "0")),
+      paymentsCount: receivedRow[0]?.count ?? 0,
+    },
     receivedByMethod: byMethod.map((row) => ({ method: row.method, total: moneyToString(new Decimal(row.total)), paymentsCount: row.count })),
     receivedByAccount: byAccount.map((row) => ({
       accountId: row.account_id,
