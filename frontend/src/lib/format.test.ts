@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatDate,
   formatDateTime,
   formatDocument,
   formatMoney,
@@ -55,5 +56,12 @@ describe("campo de dinheiro", () => {
 
   it("converte o valor da API para edição", () => {
     expect(moneyApiToInput("38.90")).toBe("38,90");
+  });
+});
+
+describe("formatDate", () => {
+  it("formata data de calendário sem mudar o dia por causa do fuso", () => {
+    expect(formatDate("2026-11-30")).toBe("30/11/2026");
+    expect(formatDate(null)).toBe("");
   });
 });

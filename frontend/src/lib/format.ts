@@ -64,3 +64,10 @@ export function moneyInputToApi(value: string): string {
 export function moneyApiToInput(value: string): string {
   return value.replace(".", ",");
 }
+
+/** "2026-11-30" → "30/11/2026" (data de calendário, sem fuso horário). */
+export function formatDate(isoDate: string | null): string {
+  if (!isoDate) return "";
+  const [year, month, day] = isoDate.split("-");
+  return `${day}/${month}/${year}`;
+}

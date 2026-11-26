@@ -13,7 +13,9 @@ Sistema interno de controle de pedidos, clientes, pagamentos e recebimentos.
 
 - **Etapa 4 (clientes e produtos):** cadastro, busca, desativação, validação de CPF/CNPJ, preço em decimal e histórico de preços. Regras em [`docs/decisoes/0005-clientes-produtos.md`](docs/decisoes/0005-clientes-produtos.md).
 
-Ainda não há pedidos nem pagamentos.
+- **Etapa 5 (pedidos):** criar, listar, ver e editar pedido pendente; preço de tabela sugerido e editável; frete, desconto e total calculados no backend. Regras em [`docs/decisoes/0006-pedidos.md`](docs/decisoes/0006-pedidos.md).
+
+Ainda não há mudança de status, cancelamento nem pagamentos.
 
 ## Estrutura
 
