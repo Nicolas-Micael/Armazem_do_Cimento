@@ -5,7 +5,15 @@ import { requireAuth } from "../../middlewares/authenticate.js";
 import { authorize } from "../../middlewares/authorize.js";
 import { validateBody } from "../../middlewares/validate.js";
 import * as controller from "./orders.controller.js";
-import { confirmOrderSchema, createOrderSchema, previewOrderSchema, updateOrderSchema } from "./orders.schemas.js";
+import {
+  advanceOrderSchema,
+  cancelOrderSchema,
+  confirmOrderSchema,
+  createOrderSchema,
+  previewOrderSchema,
+  revertOrderSchema,
+  updateOrderSchema,
+} from "./orders.schemas.js";
 
 export const ordersRouter = Router();
 
@@ -21,3 +29,7 @@ ordersRouter.post("/", validateBody(createOrderSchema), controller.create);
 ordersRouter.put("/:id", validateBody(updateOrderSchema), controller.update);
 // Só o ADM confirma uma saída (decisão do Nicolas, 26/11/2026). O Financeiro apenas consulta.
 ordersRouter.post("/:id/confirm", authorize("ADMIN"), validateBody(confirmOrderSchema), controller.confirm);
+// Status operacional (etapa E1). ADM e Financeiro avançam; só o ADM retorna status ou cancela.
+ordersRouter.post("/:id/advance", authorize("ADMIN", "FINANCEIRO"), validateBody(advanceOrderSchema), controller.advance);
+ordersRouter.post("/:id/revert", authorize("ADMIN"), validateBody(revertOrderSchema), controller.revert);
+ordersRouter.post("/:id/cancel", authorize("ADMIN"), validateBody(cancelOrderSchema), controller.cancel);
