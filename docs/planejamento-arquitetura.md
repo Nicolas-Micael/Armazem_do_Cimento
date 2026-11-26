@@ -549,7 +549,7 @@ model CompanySettings {                          // uma linha só: dados que sae
 | 0 | **Fundação** | Repositório, `CLAUDE.md` atualizado, `README`, `docs/decisoes/` | Git, organização de projeto | P-INF-1, P-INF-4 |
 | 1 | **Esqueleto do backend** | Express + TS rodando, rota `/api/health`, tratamento de erros, conexão Prisma + PostgreSQL local, primeira migration, Vitest configurado | Como um servidor recebe requisições; o que é uma migration | — |
 | 2 | **Autenticação e usuários** | Login/logout, sessão, hash de senha, perfis ADM/Financeiro, middleware de permissão, cadastro de usuários pelo ADM, seed do primeiro ADM | Autenticação × autorização; por que hash | P-USU-1, P-USU-2 |
-| 3 | **Esqueleto do frontend** | Vite + React, tela de login, layout com menu, rotas protegidas, cliente da API | Como o React conversa com o backend | — |
+| 3 | **Esqueleto do frontend** (✅ entregue junto com a etapa 2) | Vite + React, tela de login, layout com menu, rotas protegidas, cliente da API | Como o React conversa com o backend | — |
 | 4 | **Clientes e produtos** | Cadastro, listagem, busca, desativação; auditoria de mudança de preço | CRUD completo da tela ao banco | P-CLI-*, P-PRO-* |
 | 5 | **Pedidos (núcleo)** | Criar pedido pendente com itens, cópia de preço, frete, desconto e total calculados no backend; listar; ver detalhe; editar pendente | Transações; cálculo decimal; testes de regra | P-PED-*, P-DES-*, P-ENT-* |
 | 6 | **Status, edição e cancelamento** | Fluxo de status com histórico; regras de edição por status e perfil; cancelamento com motivo | Máquina de estados; regras por permissão | P-STA-*, P-CAN-* |
@@ -596,11 +596,13 @@ Cada pergunta tem um código para facilitar a resposta (ex.: "P-PED-2: sim"). On
 - **P-USU-3** A sessão deve expirar após quanto tempo? (provisório: 8 horas a partir do login, configurável)
 
 ### Clientes (etapa 4)
+> Implementado com leituras provisórias; ver `docs/decisoes/0005-clientes-produtos.md`.
 - **P-CLI-1** O Financeiro pode cadastrar e editar clientes, ou apenas consultar?
 - **P-CLI-2** CPF/CNPJ é obrigatório? Pode haver cliente sem documento (ex.: venda de balcão)?
 - **P-CLI-3** Um cliente pode ter mais de um endereço de entrega (várias obras)?
 
 ### Produtos (etapa 4)
+> Implementado com leituras provisórias; ver `docs/decisoes/0005-clientes-produtos.md`.
 - **P-PRO-1** Só o ADM altera preços? (a lista do Financeiro diz "consultar produtos")
 - **P-PRO-2** Quais informações distinguem os produtos: marca, tipo (CP II, CP III, CP V…), peso do saco?
 - **P-PRO-3** Existe preço diferente por cliente ou por quantidade, ou um preço único de tabela?

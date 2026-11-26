@@ -7,7 +7,7 @@ import type { Role } from "../src/generated/prisma/client.js";
 
 /** Apaga todos os dados do banco de TESTE para cada teste começar do zero. */
 export async function resetDatabase() {
-  await prisma.$executeRawUnsafe('TRUNCATE TABLE "audit_logs", "sessions", "users" CASCADE');
+  await prisma.$executeRawUnsafe('TRUNCATE TABLE "audit_logs", "sessions", "customers", "products", "users" CASCADE');
 }
 
 export const TEST_PASSWORD = "senha-de-teste-123";

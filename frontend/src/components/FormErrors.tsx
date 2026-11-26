@@ -9,6 +9,20 @@ const FIELD_LABELS: Record<string, string> = {
   temporaryPassword: "Senha temporária",
   currentPassword: "Senha atual",
   newPassword: "Nova senha",
+  document: "CPF/CNPJ",
+  phone: "Telefone",
+  street: "Logradouro",
+  number: "Número",
+  complement: "Complemento",
+  district: "Bairro",
+  city: "Cidade",
+  state: "UF",
+  zipCode: "CEP",
+  notes: "Observações",
+  brand: "Marca",
+  cementType: "Tipo de cimento",
+  bagWeightKg: "Peso do saco",
+  currentPrice: "Preço",
 };
 
 export function FormErrors({ error }: { error: unknown }) {

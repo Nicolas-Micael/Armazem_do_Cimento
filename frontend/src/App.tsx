@@ -5,6 +5,8 @@ import { LoginPage } from "./features/auth/LoginPage";
 import { ChangePasswordPage } from "./features/auth/ChangePasswordPage";
 import { HomePage } from "./features/home/HomePage";
 import { UsersPage } from "./features/users/UsersPage";
+import { CustomersPage } from "./features/customers/CustomersPage";
+import { ProductsPage } from "./features/products/ProductsPage";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 import { Layout } from "./components/Layout";
 
@@ -31,6 +33,8 @@ export function App() {
             }
           >
             <Route index element={<HomePage />} />
+            <Route path="/clientes" element={<CustomersPage />} />
+            <Route path="/produtos" element={<ProductsPage />} />
             <Route
               path="/usuarios"
               element={
