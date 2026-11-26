@@ -6,6 +6,7 @@ import { ConflictError, NotFoundError, ValidationError } from "../../lib/errors.
 import { recordAudit } from "../audit/audit.service.js";
 import { startOfBusinessDay, startOfNextBusinessDay } from "../../lib/businessDate.js";
 import { EFFECTIVE_STATUSES } from "../dashboard/dashboard.service.js";
+import { createFixedTermDueDate } from "../payments/dueDates.service.js";
 import { calculateOrderTotals } from "./orders.calculations.js";
 import { orderAuditSnapshot, orderInclude, toPublicOrder } from "./orders.mapper.js";
 import type { ConfirmOrderInput, CreateOrderInput, OrderListQuery, PreviewOrderInput, UpdateOrderInput } from "./orders.schemas.js";
@@ -287,6 +288,8 @@ export async function listOrders(query: OrderListQuery) {
   const where: Prisma.OrderWhereInput = {
     ...(query.status !== "all" && { status: query.status }),
     ...(query.paymentTerm !== "all" && { paymentTerm: query.paymentTerm }),
+    // Forma de pagamento: saídas com pelo menos um pagamento ativo (não estornado) desse meio.
+    ...(query.paymentMethod !== "all" && { payments: { some: { method: query.paymentMethod, status: { not: "REVERSED" as const } } } }),
     ...(query.customerId && { customerId: query.customerId }),
     ...(query.productId && { items: { some: { productId: query.productId } } }),
     ...((query.from || query.to) && {
@@ -358,6 +361,9 @@ export async function confirmOrder(actorId: string, id: string, input: ConfirmOr
     await tx.orderStatusHistory.create({
       data: { orderId: id, fromStatus: "PENDING", toStatus: "CONFIRMED", changedById: actorId, note: input.note ?? null },
     });
+
+    // Prazo de 10/15/30 dias: o vencimento nasce junto com a confirmação (decisão 11 da etapa D).
+    await createFixedTermDueDate(tx, current, actorId);
 
     const confirmed = await tx.order.findUniqueOrThrow({ where: { id }, include: orderInclude });
     await recordAudit(tx, {
