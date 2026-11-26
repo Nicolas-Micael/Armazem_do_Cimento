@@ -101,6 +101,7 @@ export const orderListQuerySchema = z
     customerId: z.string().trim().min(1).optional(),
     productId: z.string().trim().min(1).optional(),
     paymentTerm: z.enum(["IMMEDIATE", "TERM_10_DAYS", "TERM_15_DAYS", "TERM_30_DAYS", "NEGOTIATED", "all"]).default("all"),
+    paymentMethod: z.enum(["CASH", "PIX", "CHECK", "DEPOSIT", "DEBIT_CARD", "CREDIT_CARD", "TRANSFER", "all"]).default("all"),
     sortBy: z.enum(ORDER_SORT_FIELDS).default("number"),
     sortDir: z.enum(["asc", "desc"]).default("desc"),
     page: z.coerce.number().int().min(1).default(1),

@@ -20,7 +20,10 @@ Sistema interno de controle de pedidos, clientes, pagamentos e recebimentos.
 
 - **Confirmação de saída:** só o ADM confirma (Pendente → Confirmado), com histórico e auditoria; a saída passa a contar no painel. Ver `docs/decisoes/0007-erp-saidas.md`.
 
-Ainda não há os demais status, cancelamento nem pagamentos.
+- **Etapa C (tela de Saídas):** lista com filtros e totais, formulário completo, detalhe com histórico. Ver `docs/decisoes/0007-erp-saidas.md`.
+- **Etapa D1 (pagamentos, só backend):** registrar, confirmar, compensar cheque e estornar pagamentos; saldo, limite e vencimentos calculados no backend. Ainda sem telas (D2). Regras em [`docs/decisoes/0008-pagamentos.md`](docs/decisoes/0008-pagamentos.md).
+
+Ainda não há os demais status nem cancelamento.
 
 ## Estrutura
 

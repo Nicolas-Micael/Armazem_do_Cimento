@@ -45,8 +45,11 @@ model User {
 
   sessions           Session[]
   auditLogs          AuditLog[]
-  ordersCreated      Order[]              @relation("OrderCreatedBy")
+  ordersCreated      Order[]                @relation("OrderCreatedBy")
   orderStatusChanges OrderStatusHistory[]
+  paymentsCreated    Payment[]              @relation("PaymentCreatedBy")
+  paymentChanges     PaymentStatusHistory[]
+  dueDatesCreated    OrderDueDate[]
 
   @@map("users")
 }
@@ -231,6 +234,8 @@ model Order {
 
   items         OrderItem[]
   statusHistory OrderStatusHistory[]
+  payments      Payment[]
+  dueDates      OrderDueDate[]
 
   @@index([customerId])
   @@index([status])
@@ -282,4 +287,126 @@ model OrderStatusHistory {
 
   @@index([orderId])
   @@map("order_status_history")
+}
+
+// ---------------------------------------------------------------------------
+// Etapa D1 — Pagamentos (decisões em docs/decisoes/0008-pagamentos.md)
+// ---------------------------------------------------------------------------
+
+/// COMO o cliente pagou. Não é a conta onde o dinheiro entrou.
+enum PaymentMethod {
+  CASH // Dinheiro
+  PIX
+  CHECK // Cheque
+  DEPOSIT // Depósito bancário
+  DEBIT_CARD // Cartão de débito
+  CREDIT_CARD // Cartão de crédito
+  TRANSFER // Transferência bancária
+}
+
+/// Situação do pagamento. Só CONFIRMED conta como valor recebido.
+enum PaymentStatus {
+  PENDING // Pendente: registrado, falta conferir o recebimento
+  TO_CLEAR // A compensar (cheque)
+  CONFIRMED // Confirmado/compensado
+  REVERSED // Estornado (definitivo)
+}
+
+/// Tipo de conta de destino.
+enum ReceivingAccountKind {
+  BANK // Conta bancária (Bradesco, Caixa Econômica)
+  CASH_BOX // Caixa físico da empresa
+  CHECK_WALLET // Carteira de cheques / recebimentos pendentes
+}
+
+/// ONDE o valor entrou. Cadastro de referência criado pela migração.
+model ReceivingAccount {
+  id        String               @id @default(uuid())
+  /// Código estável usado pelo sistema (ex.: CASH_BOX).
+  code      String               @unique
+  name      String
+  kind      ReceivingAccountKind
+  active    Boolean              @default(true)
+  createdAt DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  payments Payment[]
+
+  @@map("receiving_accounts")
+}
+
+/// Pagamento de uma saída. NUNCA é apagado: correção = estorno + novo lançamento.
+/// Totais (recebido, a compensar, saldo) não são gravados: são calculados dos pagamentos.
+model Payment {
+  id          String           @id @default(uuid())
+  orderId     String           @map("order_id")
+  order       Order            @relation(fields: [orderId], references: [id])
+  method      PaymentMethod
+  accountId   String           @map("account_id")
+  account     ReceivingAccount @relation(fields: [accountId], references: [id])
+  amount      Decimal          @db.Decimal(12, 2)
+  /// Data do recebimento (dia de Brasília).
+  receivedAt  DateTime         @map("received_at") @db.Date
+  status      PaymentStatus
+  /// Quando virou Confirmado (conferência ou compensação).
+  confirmedAt DateTime?        @map("confirmed_at") @db.Timestamptz(3)
+  notes       String?
+
+  /// Só para cheque (todos nulos nos outros meios; garantido por CHECK no banco).
+  checkNumber           String?   @map("check_number")
+  checkBank             String?   @map("check_bank")
+  checkExpectedClearing DateTime? @map("check_expected_clearing") @db.Date
+
+  createdById String   @map("created_by_id")
+  createdBy   User     @relation("PaymentCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  history PaymentStatusHistory[]
+
+  @@index([orderId])
+  @@index([status])
+  @@index([method])
+  @@index([accountId])
+  @@map("payments")
+}
+
+/// Cada mudança de situação (e de conta) de um pagamento: quem, quando, por quê.
+model PaymentStatusHistory {
+  id            String         @id @default(uuid())
+  paymentId     String         @map("payment_id")
+  payment       Payment        @relation(fields: [paymentId], references: [id])
+  /// Vazio no registro do pagamento.
+  fromStatus    PaymentStatus? @map("from_status")
+  toStatus      PaymentStatus  @map("to_status")
+  /// Preenchidos quando a conta muda (ex.: Carteira de cheques → Bradesco).
+  fromAccountId String?        @map("from_account_id")
+  toAccountId   String?        @map("to_account_id")
+  changedById   String         @map("changed_by_id")
+  changedBy     User           @relation(fields: [changedById], references: [id])
+  changedAt     DateTime       @default(now()) @map("changed_at") @db.Timestamptz(3)
+  /// Obrigatório no estorno.
+  reason        String?
+
+  @@index([paymentId])
+  @@map("payment_status_history")
+}
+
+/// Vencimento de uma saída a prazo. Substituído (nunca apagado) quando redefinido.
+model OrderDueDate {
+  id           String    @id @default(uuid())
+  orderId      String    @map("order_id")
+  order        Order     @relation(fields: [orderId], references: [id])
+  /// 1º, 2º vencimento...
+  sequence     Int
+  dueDate      DateTime  @map("due_date") @db.Date
+  amount       Decimal   @db.Decimal(12, 2)
+  createdById  String    @map("created_by_id")
+  createdBy    User      @relation(fields: [createdById], references: [id])
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  /// Preenchido quando este vencimento foi substituído por outro conjunto.
+  supersededAt DateTime? @map("superseded_at") @db.Timestamptz(3)
+
+  @@index([orderId])
+  @@index([dueDate])
+  @@map("order_due_dates")
 }
