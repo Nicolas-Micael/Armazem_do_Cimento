@@ -1,39 +1,59 @@
-// Estrutura comum das telas internas: cabeçalho com menu e o conteúdo.
-import { NavLink, Outlet } from "react-router";
+// Estrutura comum das telas internas: menu lateral, cabeçalho e conteúdo.
+import { useEffect, useState } from "react";
+import { Outlet, useLocation } from "react-router";
 import { useAuth } from "../features/auth/AuthContext";
-import { ROLE_SHORT_LABELS } from "../api/types";
+import { Sidebar } from "./Sidebar";
+import { Topbar } from "./Topbar";
+
+const COLLAPSED_KEY = "armazem_menu_recolhido";
+
+/** Lê/grava a preferência do menu. O armazenamento do navegador pode falhar (janela privada), então tudo é protegido. */
+function readCollapsed(): boolean {
+  try {
+    return localStorage.getItem(COLLAPSED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 export function Layout() {
   const { user, logout } = useAuth();
+  const { pathname } = useLocation();
+  const [collapsed, setCollapsed] = useState(readCollapsed);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Ao trocar de tela, fecha a gaveta do menu (celular/tablet).
+  useEffect(() => setMobileOpen(false), [pathname]);
+
+  function toggleCollapsed() {
+    setCollapsed((current) => {
+      try {
+        localStorage.setItem(COLLAPSED_KEY, current ? "0" : "1");
+      } catch {
+        /* sem armazenamento: a preferência só vale nesta sessão */
+      }
+      return !current;
+    });
+  }
+
   if (!user) return null;
 
   return (
-    <>
-      <header className="app-header">
-        <strong className="brand">Armazém do Cimento</strong>
-        <nav className="app-nav">
-          <NavLink to="/" end>
-            Início
-          </NavLink>
-          <NavLink to="/pedidos">Pedidos</NavLink>
-          <NavLink to="/clientes">Clientes</NavLink>
-          <NavLink to="/produtos">Produtos</NavLink>
-          {/* O menu de usuários só aparece para o ADM (e o backend também bloqueia). */}
-          {user.role === "ADMIN" && <NavLink to="/usuarios">Usuários</NavLink>}
-        </nav>
-        <div className="app-user">
-          <span>
-            {user.name} <span className="muted small">({ROLE_SHORT_LABELS[user.role]})</span>
-          </span>
-          <NavLink to="/trocar-senha">Trocar senha</NavLink>
-          <button type="button" className="button-link" onClick={() => void logout()}>
-            Sair
-          </button>
-        </div>
-      </header>
-      <main className="page">
-        <Outlet />
-      </main>
-    </>
+    <div className={`shell${collapsed ? " shell-collapsed" : ""}`}>
+      <Sidebar
+        role={user.role}
+        collapsed={collapsed}
+        mobileOpen={mobileOpen}
+        onToggleCollapsed={toggleCollapsed}
+        onNavigate={() => setMobileOpen(false)}
+      />
+      {mobileOpen && <div className="sidebar-backdrop" onClick={() => setMobileOpen(false)} aria-hidden="true" />}
+      <div className="shell-main">
+        <Topbar user={user} onLogout={() => void logout()} onOpenMenu={() => setMobileOpen(true)} />
+        <main className="page">
+          <Outlet />
+        </main>
+      </div>
+    </div>
   );
 }

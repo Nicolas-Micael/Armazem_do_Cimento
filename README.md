@@ -15,6 +15,8 @@ Sistema interno de controle de pedidos, clientes, pagamentos e recebimentos.
 
 - **Etapa 5 (pedidos):** criar, listar, ver e editar pedido pendente; preço de tabela sugerido e editável; frete, desconto e total calculados no backend. Regras em [`docs/decisoes/0006-pedidos.md`](docs/decisoes/0006-pedidos.md).
 
+- **Etapa A (layout ERP):** menu lateral, cabeçalho com breadcrumb e busca rápida, módulos futuros como "Em desenvolvimento". Decisões e plano em [`docs/decisoes/0007-erp-saidas.md`](docs/decisoes/0007-erp-saidas.md).
+
 Ainda não há mudança de status, cancelamento nem pagamentos.
 
 ## Estrutura

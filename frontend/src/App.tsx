@@ -10,6 +10,9 @@ import { ProductsPage } from "./features/products/ProductsPage";
 import { OrdersPage } from "./features/orders/OrdersPage";
 import { OrderFormPage } from "./features/orders/OrderFormPage";
 import { OrderDetailPage } from "./features/orders/OrderDetailPage";
+import { MyAccountPage } from "./features/account/MyAccountPage";
+import { ModuleInDevelopmentPage } from "./features/placeholder/ModuleInDevelopmentPage";
+import { NAV_GROUPS } from "./components/navigation";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 import { Layout } from "./components/Layout";
 
@@ -42,6 +45,13 @@ export function App() {
             <Route path="/pedidos/:id/editar" element={<OrderFormPage key="editar" />} />
             <Route path="/clientes" element={<CustomersPage />} />
             <Route path="/produtos" element={<ProductsPage />} />
+            <Route path="/minha-conta" element={<MyAccountPage />} />
+            {/* Módulos ainda não construídos: gerados a partir do menu, sem dados falsos. */}
+            {NAV_GROUPS.flatMap((group) => group.items)
+              .filter((item) => !item.implemented)
+              .map((item) => (
+                <Route key={item.path} path={item.path} element={<ModuleInDevelopmentPage />} />
+              ))}
             <Route
               path="/usuarios"
               element={
