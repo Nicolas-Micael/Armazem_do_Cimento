@@ -71,3 +71,16 @@ export function formatDate(isoDate: string | null): string {
   const [year, month, day] = isoDate.split("-");
   return `${day}/${month}/${year}`;
 }
+
+/** Recebe: 1234 · Retorna: "1.234" (quantidades inteiras, como sacos). */
+export function formatInteger(value: number): string {
+  return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 }).format(value);
+}
+
+/** Recebe: "12.5" · Retorna: "+12,5%"; "-3.0" → "−3,0%". */
+export function formatVariation(value: string): string {
+  const negative = value.startsWith("-");
+  const digits = negative ? value.slice(1) : value;
+  const sign = negative ? "−" : value === "0.0" ? "" : "+";
+  return `${sign}${digits.replace(".", ",")}%`;
+}

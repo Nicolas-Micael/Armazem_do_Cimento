@@ -24,3 +24,29 @@ Só frontend. Nada de regra de negócio ou banco.
 - Clientes e Produtos aparecem uma vez só, em Cadastros (o pedido original os listava também em Comercial).
 - **Notificações:** o sino ainda não existe porque não há nenhum evento real para avisar. Entra quando houver (ex.: vencimentos atrasados, etapa D).
 - Minha Conta: dados do usuário logado e atalho para trocar a senha.
+
+## Etapa B — Dashboard (indicadores reais)
+
+Endpoint `GET /api/dashboard?from=AAAA-MM-DD&to=AAAA-MM-DD` (ADM e Financeiro). Sem parâmetros: do dia 1º do mês até hoje. Máximo de 366 dias. O período anterior tem a mesma duração e termina na véspera do início (usado só para a variação %).
+
+**O que conta (decisão do Nicolas, 26/11/2026):** só saídas **efetivadas**: Confirmado, Em separação, Saiu para entrega e Concluído. Pendente (rascunho) e Cancelado ficam fora de todos os indicadores. Os pendentes aparecem à parte, num aviso ("N saídas pendentes aguardando confirmação"), sem somar nos números.
+
+| Indicador | Definição |
+|---|---|
+| Saídas | Quantidade de pedidos efetivados no período |
+| Sacos vendidos | Soma das quantidades dos itens desses pedidos |
+| Faturamento | Soma do **total** dos pedidos (produtos + frete − descontos) — ❓ P-DASH-2 |
+| Ticket médio | Faturamento ÷ quantidade de saídas (arredondado a centavos, meio para cima; 0 se não houve saída) |
+| Clientes atendidos | Clientes distintos com ao menos uma saída efetivada |
+| Evolução por dia | Saídas, sacos e faturamento por dia; dias sem venda aparecem zerados |
+| Vendas por produto | Sacos e **valor dos itens** (antes de frete e desconto geral), top 10 |
+| Clientes por volume | Top 10 por sacos, com faturamento |
+| Últimas saídas | 8 mais recentes efetivadas do período |
+
+- O "dia" e o "mês" são os de **Brasília** (America/Sao_Paulo), independentemente do fuso do servidor. Há testes nas viradas de dia/mês.
+- ❓ P-DASH-1: o período usa a **data de registro do pedido** (`created_at`). Quando existir uma "data da saída" própria (etapa C) ou a data de confirmação, a coluna é trocada num só lugar (`DATE_COLUMN`).
+- Cálculos em `Decimal` no backend/PostgreSQL; no frontend os valores são só formatados (o único `Number` é para a altura das barras do gráfico).
+
+**Não calculado (de propósito):** valor recebido, saldo a receber e recebimentos por forma de pagamento. Dependem dos pagamentos (etapa D); mostrar agora seria inventar número.
+
+**Atenção:** ainda não existe a ação de confirmar uma saída (etapa E). Até lá, todo pedido novo fica Pendente e o painel mostra zeros para as saídas efetivadas. Nos testes, as situações são gravadas direto no banco.
