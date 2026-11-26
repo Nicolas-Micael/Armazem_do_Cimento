@@ -1,5 +1,5 @@
 // Tela inicial. Por enquanto mostra a situação da API e do banco; o painel
-// com indicadores entra na etapa 9.
+// com indicadores reais entra na etapa B.
 import { useEffect, useState } from "react";
 import { getHealth, type HealthResponse } from "../../api/health";
 import { formatDateTime } from "../../lib/format";
@@ -22,7 +22,7 @@ export function HomePage() {
   return (
     <>
       <h1>Olá, {user?.name}</h1>
-      <p className="muted">Pedidos, clientes e produtos estão no menu. Mudança de status, pagamentos e relatórios entram nas próximas etapas.</p>
+      <p className="muted">Use o menu lateral para acessar as saídas, clientes e produtos. Os indicadores do painel entram na próxima etapa.</p>
 
       <section className="card" aria-live="polite">
         <h2>Situação do sistema</h2>

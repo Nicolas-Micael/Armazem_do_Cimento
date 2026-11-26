@@ -1,6 +1,6 @@
 // Lista de pedidos, com busca por número ou cliente e filtro por status.
 import { useEffect, useState, type FormEvent } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { listOrders, type Order, type OrderStatus } from "../../api/orders";
 import type { Page } from "../../api/types";
 import { formatDateTime, formatMoney } from "../../lib/format";
@@ -10,12 +10,22 @@ import { Pagination } from "../../components/Pagination";
 import { StatusBadge } from "./StatusBadge";
 
 export function OrdersPage() {
-  const [searchText, setSearchText] = useState("");
-  const [search, setSearch] = useState("");
+  // A busca rápida do cabeçalho chega pelo endereço: /pedidos?busca=texto
+  const [params] = useSearchParams();
+  const urlSearch = params.get("busca") ?? "";
+  const [searchText, setSearchText] = useState(urlSearch);
+  const [search, setSearch] = useState(urlSearch);
   const [status, setStatus] = useState<OrderStatus | "all">("all");
   const [page, setPage] = useState(1);
   const [data, setData] = useState<(Page & { orders: Order[] }) | null>(null);
   const [error, setError] = useState<unknown>(null);
+
+  // Nova busca rápida enquanto já está nesta tela: atualiza o filtro.
+  useEffect(() => {
+    setSearchText(urlSearch);
+    setSearch(urlSearch);
+    setPage(1);
+  }, [urlSearch]);
 
   useEffect(() => {
     let cancelled = false;
@@ -37,9 +47,9 @@ export function OrdersPage() {
   return (
     <>
       <div className="page-title">
-        <h1>Pedidos</h1>
+        <h1>Saídas de Cimento</h1>
         <Link to="/pedidos/novo" className="button-primary">
-          Novo pedido
+          Nova Saída
         </Link>
       </div>
 
